@@ -1,0 +1,47 @@
+{:dependencies
+ [[funcool/promesa "6.0.0"]
+  [funcool/cuerdas "2020.03.26-3"]
+  [lambdaisland/glogi "1.0.83"]
+  [com.cognitect/transit-cljs "0.8.264"]
+  [frankiesardo/linked "1.3.0"]
+  [funcool/potok "3.2.0"]
+  [funcool/rumext "2021.01.26-0"]
+  [funcool/beicon "2021.03.31-1"]
+  [lambdaisland/uri "1.4.54"]]
+
+ :source-paths ["src" "vendor"]
+ :jvm-opts ["-Xmx512m" "-Xms512m" "-XX:+UseSerialGC"]
+ :dev-http {8888 "public"}
+
+ :builds
+ {:main
+  {:target :browser
+   :asset-path "/js"
+   :output-dir "./public/js/"
+
+   :modules
+   {:main {:entries [stks.core]
+           :init-fn stks.core/start}}
+
+   :devtools {:browser-inject :main
+              :watch-dir "public/"
+              ;; :before-load-async stks.core/stop
+              ;; :after-load stks.core/start
+              }
+
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :optimizations :simple
+     :source-map true
+     :elide-asserts true
+     :pseudo-names true
+     :pretty-print true
+     :anon-fn-naming-policy :off
+     :source-map-detail-level :all}}}}}
+
+

@@ -1,0 +1,315 @@
+* {
+  font-family: 'Iosevka Slab Web', monospace;
+  font-weight: 300;
+  color: var(--color-gray-60);
+}
+
+:root {
+  --color-primary-0: rgba( 16,149,174,1);
+  --color-primary-1: rgba( 98,182,197,1);
+  --color-primary-2: rgba( 64,196,220,1);
+  --color-primary-3: rgba(  9, 87,101,1);
+  --color-primary-4: rgba(  2, 94,111,1);
+  --color-primary-5: rgba( 16,149,174,0.07);
+  --color-primary-6: rgba( 16,149,174,0.2);
+
+  --color-white: rgb(255,255,255);
+  --color-black: rgb(0,0,0);
+  --color-success: rgb(88, 195, 92);
+  --color-complete : rgb(165, 153, 198);
+  --color-warning: rgb(252, 136, 2);
+  --color-danger: rgb(230, 82, 68);
+  --color-info: rgb(89, 185, 226);
+  --color-ocean: rgb(66, 133, 244);
+
+  --color-gray-1:  rgb(245, 245, 245);
+  --color-gray-5:  rgb(232, 233, 234);
+  --color-gray-10: rgb(227, 227, 227);
+  --color-gray-20: rgb(177, 178, 181);
+  --color-gray-30: rgb(123, 125, 133);
+  --color-gray-40: rgb(100, 102, 106);
+  --color-gray-50: rgb(48, 50, 54);
+  --color-gray-60: rgb(31, 31, 31);
+
+  --color-gray-5-05:  rgba(232, 233, 234, 0.5);
+
+  --color-success-dark: rgb(71,158,75);
+  --color-danger-dark: #ba4237;
+  --color-danger-lighter: #fadcda;
+
+  --color-success-lighter: rgba(88, 195, 92, 0.1);
+  --color-danger-lighter: rgba(230, 82, 68, 0.1);
+  --color-inactive: rgb(100, 102, 106);
+  --color-inactive-lighter: rgba(100, 102, 106, 0.1);
+}
+
+body {
+  margin: 0px;
+}
+
+#app {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+main {
+  margin-top: 10px;
+  display: flex;
+  max-width: 900px;
+  width: 100%;
+  flex-direction: column;
+  position: relative;
+}
+
+main .message {
+  border-radius: 2px;
+  position: absolute;
+  justify-content: space-between;
+  display: flex;
+  height: 43px;
+  user-select: none;
+  width: 100%;
+}
+
+main .message.error {
+  background-color: var(--color-danger);
+}
+main .message.info {
+  background-color: var(--color-info);
+}
+main .message.success {
+  background-color: var(--color-success);
+}
+
+main .message .content {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: center;
+  padding: 0px;
+  align-items: center;
+}
+
+main .message .close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding-right: 10px;
+}
+
+main .message .content .icon {
+  display: flex;
+  padding-right: 10px;
+}
+
+.header {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 10px;
+  border-bottom: 1px dotted var(--color-gray-10);
+  margin-bottom: 10px;
+
+}
+
+.header nav ul {
+  display: flex;
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+}
+
+.header nav li {
+  cursor: pointer;
+  border: 1px solid var(--color-gray-10);
+  padding: 6px 12px;
+  border-radius: 2px;
+}
+
+.header nav li:hover {
+  border: 1px solid var(--color-gray-20);
+}
+
+.header nav li:not(:last-child) {
+  margin-right: 10px;
+}
+
+.header .section-title {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  height: 34px;
+}
+
+.symbols-table h2 {
+  margin: 0px;
+  padding: 6px;
+  font-weight: 300;
+  font-size: 22px;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  color: var(--color-gray-40);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 10px;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+}
+
+.table .table-header {
+  display: flex;
+  justify-content: center;
+  padding: 6px 12px;
+  border-bottom: 1px dashed var(--color-gray-20);
+  color: var(--color-gray-30);
+  font-weight: 500;
+  border-radius: 2px;
+}
+
+.table .table-column.symbol {
+  flex-grow: 1;
+}
+
+.table .table-column.signal {
+  display: flex;
+  width: 120px;
+  border-right: 1px dashed var(--color-gray-10);
+  border-left: 1px dashed var(--color-gray-10);
+  justify-content: center;
+}
+
+.table .table-column.indicator {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+  border-right: 1px dashed var(--color-gray-10);
+}
+
+.table .table-column.time {
+  width: 120px;
+  display: flex;
+  justify-content: center;
+}
+
+.table .table-row {
+  display: flex;
+  justify-content: center;
+  padding: 6px 12px;
+  border: 1px solid var(--color-gray-5-05);
+  font-weight: 400;
+  box-shadow: 1px 1px 2px 0px var(--color-gray-10);
+  cursor: pointer;
+  border-left: 5px solid var(--color-gray-10);
+  border-radius: 2px;
+}
+.table .table-row:not(:first-child) {
+  margin-top: 10px;
+}
+
+.table .table-row:hover {
+  border-left: 5px solid var(--color-primary-1);
+}
+
+.table .table-row.viewed {
+  color: var(--color-gray-10);
+}
+
+/* --- SECTION: SYMBOLS --- */
+
+.symbols-section {}
+.symbols-section .exchange-selection {
+  /* border-bottom: 1px dotted var(--color-gray-10); */
+  padding: 6px 12px;
+}
+.symbols-section .exchange-selection select {
+  border: 1px solid var(--color-gray-40);
+  border-radius: 2px;
+  background-color: white;
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  padding: 4px;
+}
+
+.symbols-section .symbols-list {
+  padding: 6px 12px;
+  margin-top: 5px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+.symbols-section .symbols-list label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* --- SECTION: AUTH --- */
+
+.auth-section {
+  margin-top: 8vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-section form {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+}
+
+.auth-section form .row {
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-section form input[type=text] {
+  padding: 0px 6px;
+  /* width: 300px; */
+  width: 100%;
+  font-size: 18px;
+  height: 34px;
+}
+.auth-section form input[type=submit] {
+  width: 140px;
+  background-color: var(--color-gray-60);
+  background-color: var(--color-primary-4);
+  border: 1px solid transparent;
+  border-radius: 2px;
+  font-weight: 600;
+  font-size: 18px;
+  color: white;
+  height: 34px;
+}
+
+.auth-section form input[disabled] {
+  opacity: 0.4;
+}
+
+
+/* --- BREADCRUMB --- */
+
+.breadcrumb span:nth-child(1) {
+  font-weight: 600;
+}
+
+.breadcrumb span:nth-child(2) {
+  font-weight: 300;
+  /* color: var(--color-gray-40); */
+}
+
+.breadcrumb span:nth-child(3) {
+  font-weight: 300;
+  color: var(--color-gray-40);
+}
+

@@ -1,0 +1,28 @@
+{
+  "name": "stk-exporter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andrey Antukh",
+  "license": "SEE LICENSE IN <LICENSE>",
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.35",
+    "@fortawesome/free-solid-svg-icons": "^5.15.3",
+    "@fortawesome/react-fontawesome": "^0.1.14",
+    "cron-parser": "^3.3.0",
+    "humanize-duration": "^3.25.1",
+    "lodash": "^4.17.21",
+    "luxon": "^1.26.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "rxjs": "^7.0.0-beta.13",
+    "xregexp": "^5.0.1"
+  },
+  "devDependencies": {
+    "shadow-cljs": "2.11.26",
+    "source-map-support": "^0.5.19"
+  }
+}
