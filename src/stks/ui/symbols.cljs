@@ -67,7 +67,6 @@
     (mf/with-effect
       (->> (rp/req! :exchanges)
            (rx/subs (fn [data]
-                      (prn "KKKKK" data)
                       (reset! exchanges data)
                       (reset! exchange (first data))))))
 

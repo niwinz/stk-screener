@@ -67,8 +67,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (when-let [tfs (seq (stg/get-timeframes state))]
-        (prn :init-symbol-scheduler tfs)
-
         (let [stoper (rx/merge
                       (rx/filter (ptk/type? :stop) stream)
                       (->> stream

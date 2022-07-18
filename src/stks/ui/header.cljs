@@ -28,7 +28,7 @@
      [:div.header
       [:div.section-title
        [:div.breadcrumb
-        [:span "Screener"]
+        [:span "§§"]
         [:span " / "]
         [:span (case (:section nav)
                  :symbols "Symbols"

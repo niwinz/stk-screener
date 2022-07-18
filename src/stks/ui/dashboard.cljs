@@ -16,16 +16,15 @@
    [stks.util.data :as d]
    [stks.util.fontawesome :as fa]
    [stks.util.time :as dt]
+   [stks.util.timers :as tm]
    [stks.util.webapi :as wa]))
 
 (mf/defc symbol-item
   [{:keys [symbol-id strategy-id created-at updated-at direction inactive]}]
-  (let [symbol-name (get-in @st/state [:symbols symbol-id :name])
-        toggle-status
-        (mf/use-callback
-         (mf/deps symbol-id strategy-id)
-         (fn []
-           (st/emit! #(update-in % [:signals strategy-id symbol-id :inactive] not))))]
+  (let [symbol-name   (get-in @st/state [:symbols symbol-id :name])
+        toggle-status (mf/with-memo [symbol-id strategy-id]
+                        (fn []
+                          (st/emit! #(update-in % [:signals strategy-id symbol-id :inactive] not))))]
 
     [:div.symbol-entry {:key symbol-id
                         :style {:user-select "none"}
@@ -39,9 +38,15 @@
      [:div.age (dt/age created-at (dt/now))]]))
 
 (mf/defc strategy-item
+  {::mf/wrap [mf/memo]}
   [{:keys [strategy-id] :as props}]
   (let [symbols (mf/deref st/symbols-ref)
-        signals (mf/deref st/signals-ref)]
+        signals (mf/deref st/signals-ref)
+        render  (mf/use-state 0)]
+
+    (mf/with-effect
+      (tm/repeat 2000 #(swap! render inc)))
+
     [:*
      [:fieldset.strategy-item
       [:legend (pr-str strategy-id)]
@@ -61,4 +66,4 @@
         signals    (mf/deref st/signals-ref)]
     [:section.dashboard
      (for [id (sort strategies)]
-       [:& strategy-item {:key id :strategy-id id}])]))
+       [:& strategy-item {:key (str/concat id) :strategy-id id}])]))

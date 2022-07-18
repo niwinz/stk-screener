@@ -5,6 +5,7 @@
 ;; Copyright (c) Andrey Antukh <niwi@niwi.nz>
 
 (ns stks.util.timers
+  (:refer-clojure :exclude [repeat])
   (:require
    [beicon.core :as rx]
    [promesa.core :as p]))
@@ -13,10 +14,12 @@
   ([func]
    (schedule 0 func))
   ([ms func]
-   (let [sem (js/setTimeout #(func) ms)]
-     (reify rx/IDisposable
+   (let [sem (js/setTimeout #(func) ms)
+         f   #(js/clearTimeout sem)]
+     (specify! f
+       rx/IDisposable
        (-dispose [_]
-         (js/clearTimeout sem))))))
+         (^function f))))))
 
 (defn dispose!
   [v]
@@ -27,12 +30,14 @@
   (-> (p/resolved nil)
       (p/then f)))
 
-(defn interval
+(defn repeat
   [ms func]
-  (let [sem (js/setInterval #(func) ms)]
-    (reify rx/IDisposable
+  (let [sem (js/setInterval #(func) ms)
+        f   #(js/clearInterval sem)]
+    (specify! f
+      rx/IDisposable
       (-dispose [_]
-        (js/clearInterval sem)))))
+        (^function f)))))
 
 (if (and (exists? js/window) (.-requestIdleCallback js/window))
   (do
@@ -44,7 +49,10 @@
 
 (defn schedule-on-idle
   [func]
-  (let [sem (request-idle-callback #(func))]
-    (reify rx/IDisposable
+  (let [sem (request-idle-callback #(func))
+        f   #(cancel-idle-callback sem)]
+    (specify! f
+      rx/IDisposable
       (-dispose [_]
-        (cancel-idle-callback sem)))))
+        (^function f)))))
+

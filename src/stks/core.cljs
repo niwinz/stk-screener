@@ -21,6 +21,8 @@
 (defonce root
   (-> "app" wa/get-element mf/create-root))
 
+(log/set-level! :trace)
+
 (defn start
   [& args]
   (log/info :msg "initializing")
@@ -38,8 +40,6 @@
 
 (defn restart
   []
-  (mf/unmount! (wa/get-element "app"))
-  (mf/unmount! (wa/get-element "modal"))
   (st/emit! (ptk/event :stop))
   (start))
 

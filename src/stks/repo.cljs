@@ -161,13 +161,12 @@
                            :h4  (-> now (dt/minus {:days 13}) (dt/format :epoch))
                            :d1  (-> now (dt/minus {:days 60}) (dt/format :epoch)))
                    :indicator "macd"}]
-      #_(with-cache {:key [id timeframe 5]
-                   :disable true
+      (with-cache {:key [id timeframe 5]
+                   :disable false
                    :max-age (case timeframe
                               :m30 (dt/duration {:minutes 15})
                               :h4  (dt/duration {:hours 1})
-                              (dt/duration {:minutes 5}))})
-      (do
+                              (dt/duration {:minutes 5}))}
         (->> (request-finnhub "indicator" params')
              (rx/map on-data))))))
 
