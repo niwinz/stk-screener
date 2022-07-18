@@ -14,6 +14,7 @@
    [okulary.core :as l]
    [potok.core :as ptk]
    [stks.repo :as rp]
+   [stks.events.types.nav :as-alias t.nav]
    [stks.events.symbols]
    [stks.events.strategies]
    [stks.events.messages :as em]
@@ -84,16 +85,15 @@
           (->> (rx/from (seq symbols))
                (rx/map #(ptk/event :init-symbol-scheduler {:id %}))))))))
 
-(s/def :stks.events$nav/section ::us/keyword)
-(s/def :stks.events$nav/token ::us/string)
-(s/def :stks.events$nav/strategies ::us/set-of-kw)
-(s/def :stks.events$nav/symbols ::us/set-of-str)
-
-(s/def ::nav
-  (s/keys :opt-un [:stks.events$nav/section
-                   :stks.events$nav/token
-                   :stks.events$nav/strategies
-                   :stks.events$nav/symbols]))
+(s/def ::t.nav/section ::us/keyword)
+(s/def ::t.nav/token ::us/string)
+(s/def ::t.nav/strategies ::us/set-of-kw)
+(s/def ::t.nav/symbols ::us/set-of-str)
+(s/def ::t.nav/params
+  (s/keys :opt-un [::t.nav/section
+                   ::t.nav/token
+                   ::t.nav/strategies
+                   ::t.nav/symbols]))
 
 (defmethod ptk/resolve :nav
   [_ params]
@@ -103,8 +103,7 @@
 
     ptk/UpdateEvent
     (update [_ state]
-
-      (prn "NAV" params)
+      (log/trace :hint "navigate" :params params)
       (-> state
           (update :nav (fn [nav]
                          (reduce-kv (fn [res k v]
@@ -113,7 +112,7 @@
                                         (assoc res k v)))
                                     nav
                                     params)))
-          (update :nav #(us/conform ::nav %))))
+          (update :nav #(us/conform ::t.nav/params %))))
 
     ptk/EffectEvent
     (effect [_ state stream]

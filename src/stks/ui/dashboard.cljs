@@ -26,13 +26,14 @@
                         (fn []
                           (st/emit! #(update-in % [:signals strategy-id symbol-id :inactive] not))))]
 
-    [:div.symbol-entry {:key symbol-id
-                        :style {:user-select "none"}
-                        :on-click toggle-status
-                        :class (wa/classnames
-                                :direction-up (= :up direction)
-                                :direction-down (= :down direction)
-                                :inactive inactive)}
+    [:div.symbol-entry
+     {:key (str/concat symbol-id)
+      :style {:user-select "none"}
+      :on-click toggle-status
+      :class (wa/classnames
+              :direction-up (= :up direction)
+              :direction-down (= :down direction)
+              :inactive inactive)}
      [:div.id (or symbol-name symbol-id)]
      [:div.dir (case direction :up "⇈" :down "⇊")]
      [:div.age (dt/age created-at (dt/now))]]))
@@ -52,7 +53,7 @@
       [:legend (pr-str strategy-id)]
       (for [symbol-id symbols]
         (when-let [data (get-in signals [strategy-id symbol-id])]
-          [:& symbol-item {:key symbol-id
+          [:& symbol-item {:key (str/concat symbol-id)
                            :symbol-id symbol-id
                            :strategy-id strategy-id
                            :created-at (:created-at data)
@@ -66,4 +67,6 @@
         signals    (mf/deref st/signals-ref)]
     [:section.dashboard
      (for [id (sort strategies)]
-       [:& strategy-item {:key (str/concat id) :strategy-id id}])]))
+       [:& strategy-item
+        {:key (str/concat id)
+         :strategy-id id}])]))
