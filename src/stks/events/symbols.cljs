@@ -39,7 +39,7 @@
                             (map #(cron/ms-until-next %)))))
 
           (on-subscribe [subscriber]
-            (log/trace :action "sub" :symbol id)
+            (log/trace :hint "subscribe to symbol scheduler" :symbol id)
             (let [sem (atom nil)
                   efn (fn emmiter []
                         (rx/push! subscriber id)
@@ -47,7 +47,7 @@
                           (reset! sem rsc)))]
               (efn)
               (fn []
-                (log/trace :action "unsub" :symbol id)
+                (log/trace :hint "unsubscribe from symbol scheduler" :symbol id)
                 (when-let [rsc (deref sem)]
                   (tm/dispose! rsc)
                   (reset! sem nil)))))]

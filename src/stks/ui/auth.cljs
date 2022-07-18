@@ -21,7 +21,7 @@
 
 (mf/defc auth-section
   [props]
-  (let [token (mf/use-state "c1f110748v6of5hb7lvg")
+  (let [token (mf/use-state "")
         input (mf/use-ref)
 
         on-change

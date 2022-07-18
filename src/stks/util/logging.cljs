@@ -7,12 +7,11 @@
 (ns stks.util.logging
   (:require-macros [stks.util.logging])
   (:require
-   [cuerdas.core :as str]
+   [cuerdas.core :as str :include-macros true]
    [fipp.edn :as fpp]
    [goog.log :as glog]
    [stks.util.data :as d]
    [stks.util.exceptions :as ex]))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CLJ Specific

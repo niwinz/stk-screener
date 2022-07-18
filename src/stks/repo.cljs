@@ -123,26 +123,32 @@
 
 (defmethod request :symbol-data
   [id {:keys [id timeframe] :as params} opts]
-  (letfn [(on-data [data]
-            (let [macd1    (vec (obj/get data "macd"))
-                  macd2    (vec (obj/get data "macdSignal"))
+  (letfn [(extract-field [data field]
+            (-> (obj/get data "macd") (seq) (reverse)))
+          (on-data [data]
+            ;; (js/console.log data)
+            (let [macd1   (extract-field data "macd")
+                  macd2   (extract-field data "macdSignal")
+                  close   (extract-field data "c")
+                  ts      (extract-field data "t")
 
-                  open     (vec (obj/get data "o"))
-                  close    (vec (obj/get data "c"))
-                  high     (vec (obj/get data "h"))
-                  low      (vec (obj/get data "l"))
-                  tm       (vec (obj/get data "t"))
-                  len      (count tm)
-                  pos      (- len 1)]
-              {:timestamp   (dt/epoch->datetime (nth tm pos) {:zone "utc"})
-               :timeframe   timeframe
-               :symbol-id   id
-               :open        (nth open pos)
-               :close       (nth close pos)
-               :high        (nth high pos)
-               :low         (nth low pos)
-               :macd        (nth macd1 pos)
-               :macd-signal (nth macd2 pos)}))]
+                  entries (map (fn [macd1 macd2 close ts]
+                                 {:ts    (dt/epoch->datetime ts {:zone "utc"})
+                                  :close close
+                                  :macd1 macd1
+                                  :macd2 macd2})
+                               (take 5 macd1)
+                               (take 5 macd2)
+                               (take 5 close)
+                               (take 5 ts))]
+
+              ;; (prn "REPO" :symbol-data)
+              ;; (stks.util.pprint/pprint entries)
+
+              {:symbol-id   id
+               :timeframe timeframe
+               :entries entries}))
+          ]
 
     (let [now     (dt/now)
           params' {:symbol id
@@ -155,14 +161,16 @@
                    :from (case timeframe
                            :m5  (-> now (dt/minus {:hours 4}) (dt/format :epoch))
                            :m30 (-> now (dt/minus {:days 3})  (dt/format :epoch))
-                           :h4  (-> now (dt/minus {:days 10}) (dt/format :epoch))
+                           :h4  (-> now (dt/minus {:days 13}) (dt/format :epoch))
                            :d1  (-> now (dt/minus {:days 60}) (dt/format :epoch)))
                    :indicator "macd"}]
-      (with-cache {:key [id timeframe 5]
+      #_(with-cache {:key [id timeframe 5]
                    :disable true
                    :max-age (case timeframe
                               :m30 (dt/duration {:minutes 15})
                               :h4  (dt/duration {:hours 1})
-                              (dt/duration {:minutes 5}))}
+                              (dt/duration {:minutes 5}))})
+      (do
         (->> (request-finnhub "indicator" params')
              (rx/map on-data))))))
+

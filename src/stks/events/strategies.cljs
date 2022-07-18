@@ -50,11 +50,11 @@
 
 (defmethod ptk/resolve :execute-strategies
   [_ sdata]
-  (letfn [(prepare-params [strategy]
+  (letfn [(prepare [strategy]
             {:symbol-id (:id sdata)
              :strategy-id (:id strategy)
-             :main (get sdata (:main strategy))
-             :reference (get sdata (:reference strategy))})]
+             :main        (get sdata (:main strategy))
+             :ref         (get sdata (:reference strategy))})]
     (ptk/reify :execute-strategies
       ptk/WatchEvent
       (watch [_ state stream]
@@ -62,7 +62,7 @@
         (let [selected-strategies (get-in state [:nav :strategies])]
           (->> (rx/from (seq strategies))
                (rx/filter #(contains? selected-strategies (:id %)))
-               (rx/map prepare-params)
+               (rx/map prepare)
                (rx/map #(ptk/event :execute-strategy %))
                (rx/observe-on :async)))))))
 
@@ -73,15 +73,16 @@
 (defmethod execute-strategy :default [_] nil)
 
 (defmethod execute-strategy :macd-m30
-  [{:keys [main reference] :as sdata}]
-  (println "========== init execute-strategy" :macd-m30)
-  (cljs.pprint/pprint main)
-  (cljs.pprint/pprint reference)
-  (println "========== end  execute-strategy" :macd-m30)
-
-  (let [dir (if (> (:macd reference) (:macd-signal reference)) :up :down)]
-    (when (or (and (= dir :up) (neg? (:macd main)))
-              (and (= dir :down) (pos? (:macd main))))
+  [{:keys [main ref] :as sdata}]
+  ;; (println "========== init execute-strategy" :macd-m30)
+  ;; (cljs.pprint/pprint main)
+  ;; (cljs.pprint/pprint ref)
+  ;; (println "========== end  execute-strategy" :macd-m30)
+  (let [main (-> main :entries first)
+        ref  (-> ref :entries first)
+        dir  (if (> (:macd1 ref) (:macd2 ref)) :up :down)]
+    (when (or (and (= dir :up) (neg? (:macd1 main)))
+              (and (= dir :down) (pos? (:macd1 main))))
       {:dir dir})))
 
 (defmethod ptk/resolve :execute-strategy
