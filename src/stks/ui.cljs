@@ -6,10 +6,8 @@
 
 (ns stks.ui
   (:require
-   [cljs.pprint :refer [pprint]]
-   [stks.util.pprint :as pp]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
-   [expound.alpha :as expound]
    [potok.core :as ptk]
    [rumext.v2 :as mf]
    [stks.config :as cf]
@@ -22,8 +20,9 @@
    [stks.ui.strategies :refer [strategies-section]]
    [stks.ui.symbols :refer [symbols-section]]
    [stks.util.data :as d]
-   [stks.util.spec :as us]
-   [stks.util.fontawesome :as fa]))
+   [stks.util.fontawesome :as fa]
+   [stks.util.pprint :as pp]
+   [stks.util.spec :as us]))
 
 (mf/defc app
   [props]
@@ -57,6 +56,11 @@
     (js/console.log (us/pretty-explain error))
     (js/console.groupEnd message)))
 
+
+(defmethod ptk/handle-error :authentication
+  [error]
+  (rx/of (ptk/event :logout)))
+
 ;; Error that happens on an active bussines model validation does not
 ;; passes an validation (example: profile can't leave a team). From
 ;; the user perspective a error flash message should be visualized but
@@ -76,19 +80,18 @@
 
 (defmethod ptk/handle-error :default
   [error]
-  (if (instance? ExceptionInfo error)
+  (cond
+    (instance? ExceptionInfo error)
     (ptk/handle-error (ex-data error))
-    (do
-      #_(ts/schedule
-       (st/emitf (dm/assign-exception error)))
 
-      (js/console.group "Internal error:")
-      (js/console.log "hint:" (or (ex-message error)
-                                  (:hint error)
-                                  (:message error)))
-      (js/console.error (clj->js error))
+    (map? error)
+    (ptk/handle-error error)
+
+    :else
+    (let [msg (str/concat "Internal error: " (ex-message error))]
+      (js/console.group msg)
       (js/console.error "stack:" (.-stack error))
-      (js/console.groupEnd "Internal error:"))))
+      (js/console.groupEnd msg))))
 
 #_
 (defonce uncaught-error-handler
