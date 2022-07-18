@@ -160,7 +160,7 @@ main .message .content .icon {
 }
 
 .dashboard .strategy-item {
-  width: 100%;
+  width: auto;
   display: flex;
   justify-content: flex-start;
   flex-wrap: wrap;
