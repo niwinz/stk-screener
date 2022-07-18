@@ -10,8 +10,8 @@
 (ns stks.ui.header
   (:require
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]
    [potok.core :as ptk]
+   [rumext.v2 :as mf]
    [stks.events]
    [stks.store :as st]
    [stks.ui.messages :as ms]
@@ -20,9 +20,10 @@
 
 (mf/defc header
   [{:keys [nav] :as props}]
-  (let [logout        #(st/emit! (ptk/event :logout))
-        nav-symbols   #(st/emit! (ptk/event :nav {:section :symbols}))
-        nav-dashboard #(st/emit! (ptk/event :nav {:section :dashboard}))]
+  (let [logout         #(st/emit! (ptk/event :logout))
+        nav-symbols    #(st/emit! (ptk/event :nav {:section :symbols}))
+        nav-strategies #(st/emit! (ptk/event :nav {:section :strategies}))
+        nav-dashboard  #(st/emit! (ptk/event :nav {:section :dashboard}))]
 
     [:*
      [:& ms/messages]
@@ -35,12 +36,22 @@
         [:span (case (:section nav)
                  :symbols "Symbols"
                  :dashboard "Dashboard"
+                 :strategies "Strategies"
                  :auth "Authentication")]]]
-      (when nav
+      (when-let [{:keys [section]} nav]
         [:nav
-         (when (not= :auth (:section nav))
+         (when (not= :auth section)
            [:ul
-            (if (= :symbols (:section nav))
-              [:li {:on-click nav-dashboard} "Dashboard"]
-              [:li {:on-click nav-symbols} "Symbols"])
+            [:li {:on-click nav-dashboard
+                  :class (when (= :dashboard section) "active")}
+             "Dashboard"]
+
+            [:li {:on-click nav-strategies
+                  :class (when (= :strategies section) "active")}
+             "Strategies"]
+
+            [:li {:on-click nav-symbols
+                  :class (when (= :symbols section) "active")}
+             "Symbols"]
+
             [:li {:on-click logout} "<- Quit"]])])]]))

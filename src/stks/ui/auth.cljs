@@ -10,39 +10,37 @@
 (ns stks.ui.auth
   (:require
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]
    [potok.core :as ptk]
+   [rumext.v2 :as mf]
    [stks.events]
    [stks.store :as st]
    [stks.ui.messages :as ms]
-   [stks.util.dom :as dom]
    [stks.util.data :as d]
-   [stks.util.fontawesome :as fa]))
-
-;; c1f110748v6of5hb7lvg
+   [stks.util.fontawesome :as fa]
+   [stks.util.webapi :as wa]))
 
 (mf/defc auth-section
   [props]
-  (let [token (mf/use-state "")
+  (let [token (mf/use-state "c1f110748v6of5hb7lvg")
         input (mf/use-ref)
 
         on-change
         (mf/use-callback
          (fn [event]
-           (let [value (-> (dom/get-target event)
-                           (dom/get-value))]
+           (let [value (-> (wa/get-target event)
+                           (wa/get-value))]
              (reset! token (str/trim value)))))
 
         on-error
         (mf/use-callback
          (fn []
-           (dom/focus! (mf/ref-val input))))
+           (wa/focus! (mf/ref-val input))))
 
         on-submit
         (mf/use-callback
          (mf/deps @token)
          (fn [event]
-           (dom/prevent-default! event)
+           (wa/prevent-default! event)
            (let [params (with-meta {:token @token}
                           {:on-error on-error})]
              (st/emit! (ptk/event :authenticate params)))))]

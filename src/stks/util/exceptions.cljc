@@ -19,15 +19,16 @@
   (s/keys :req-un [::type]
           :opt-un [::code
                    ::hint
-                   ::mesage
                    ::cause]))
 
 (defn error
-  [& {:keys [type code message hint cause] :as params}]
+  [& {:keys [hint cause ::data type] :as params}]
   (s/assert ::error-params params)
-  (let [message (or message hint "")
-        payload (dissoc params :cause)]
-    (ex-info message payload cause)))
+  (let [payload (-> params
+                    (dissoc :cause ::data)
+                    (merge data))
+        hint    (or hint (pr-str type))]
+    (ex-info hint payload cause)))
 
 (defmacro raise
   [& args]
@@ -52,13 +53,3 @@
   [v]
   #?(:cljs (instance? cljs.core.ExceptionInfo v)
      :clj (instance? clojure.lang.ExceptionInfo v)))
-
-#?(:clj
-   (defn ->map
-     [^Exception err]
-     {:ex-class   (.getName (class err))
-      :ex-stack   (with-out-str
-                    (.printStackTrace err (java.io.PrintWriter. *out*)))
-      :ex-message (ex-message err)
-      :ex-data    (ex-data err)}))
-

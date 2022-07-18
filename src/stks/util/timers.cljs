@@ -2,13 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
 ;; Copyright (c) Andrey Antukh <niwi@niwi.nz>
 
 (ns stks.util.timers
   (:require
+   [beicon.core :as rx]
    [promesa.core :as p]))
 
 (defn schedule
@@ -16,7 +14,13 @@
    (schedule 0 func))
   ([ms func]
    (let [sem (js/setTimeout #(func) ms)]
-     #(js/clearTimeout sem))))
+     (reify rx/IDisposable
+       (-dispose [_]
+         (js/clearTimeout sem))))))
+
+(defn dispose!
+  [v]
+  (rx/dispose! v))
 
 (defn asap
   [f]
@@ -26,7 +30,9 @@
 (defn interval
   [ms func]
   (let [sem (js/setInterval #(func) ms)]
-    #(js/clearInterval sem)))
+    (reify rx/IDisposable
+      (-dispose [_]
+        (js/clearInterval sem)))))
 
 (if (and (exists? js/window) (.-requestIdleCallback js/window))
   (do
@@ -39,4 +45,6 @@
 (defn schedule-on-idle
   [func]
   (let [sem (request-idle-callback #(func))]
-    #(cancel-idle-callback sem)))
+    (reify rx/IDisposable
+      (-dispose [_]
+        (cancel-idle-callback sem)))))

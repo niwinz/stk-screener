@@ -9,36 +9,41 @@
 
 (ns stks.core
   (:require
-   [lambdaisland.glogi :as log]
-   [lambdaisland.glogi.console :as glogi-console]
+   [lambdaisland.uri :as u]
+   [potok.core :as ptk]
    [promesa.core :as p]
-   [rumext.alpha :as mf]
+   [rumext.v2 :as mf]
    [stks.store :as st]
    [stks.ui :as ui]
-   [stks.util.dom :as dom]))
+   [stks.util.logging :as log]
+   [stks.util.webapi :as wa]))
 
-(glogi-console/install!)
+(log/initialize!)
 (enable-console-print!)
+
+(defonce root
+  (-> "app" wa/get-element mf/create-root))
 
 (defn start
   [& args]
   (log/info :msg "initializing")
   (st/init)
-  (mf/mount (mf/element ui/app)
-            (dom/get-element "app")))
+  (st/emit! (ptk/event :setup))
+  (mf/render! root (mf/element ui/app)))
 
 (defn stop
   [done]
   ;; an empty line for visual feedback of restart
   (js/console.log "")
-
   (log/info :msg "stoping")
+  (st/emit! (ptk/event :stop))
   (done))
 
 (defn restart
   []
-  (mf/unmount (dom/get-element "app"))
-  (mf/unmount (dom/get-element "modal"))
+  (mf/unmount! (wa/get-element "app"))
+  (mf/unmount! (wa/get-element "modal"))
+  (st/emit! (ptk/event :stop))
   (start))
 
 (defn ^:dev/after-load after-load

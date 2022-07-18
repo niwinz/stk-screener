@@ -10,38 +10,37 @@
    [stks.util.timers :as tm]
    [stks.util.exceptions :as ex]))
 
-(defn- ^boolean is-worker?
-  []
-  (or (= *target* "nodejs")
-      (not (exists? js/window))))
-
-(defn- decode
-  [v]
-  (t/decode v))
-
-(def local
-  {:get #(decode (.getItem ^js js/localStorage (name %)))
-   :set #(.setItem ^js js/localStorage (name %1) (t/encode %2))})
-
-(def session
-  {:get #(decode (.getItem ^js js/sessionStorage (name %)))
-   :set #(.setItem ^js js/sessionStorage (name %1) (t/encode %2))})
-
 (defn- persist
-  [alias storage value]
-  (when-not (is-worker?)
-    (tm/schedule-on-idle
-     (fn [] ((:set storage) alias value)))))
+  [storage prev curr]
+  (run! (fn [key]
+          (let [prev* (get prev key)
+                curr* (get curr key)]
+            (when (not= curr* prev*)
+              (tm/schedule-on-idle
+               #(if (some? curr*)
+                  (.setItem ^js storage (t/encode key) (t/encode curr*))
+                  (.removeItem ^js storage (t/encode key)))))))
+
+        (into #{} (concat (keys curr)
+                          (keys prev)))))
 
 (defn- load
-  [alias storage]
-  (when-not (is-worker?)
-    ((:get storage) alias)))
+  [storage]
+  (let [len (.-length ^js storage)]
+    (reduce (fn [res index]
+              (let [key (.key ^js storage index)
+                    val (.getItem ^js storage key)]
+                (try
+                  (assoc res (t/decode key) (t/decode val))
+                  (catch :default e
+                    res))))
+            {}
+            (range len))))
 
 (defn- make-storage
-  [alias storage]
-  (let [data (atom (load alias storage))]
-    (add-watch data :sub #(persist alias storage %4))
+  [storage]
+  (let [data (atom (load storage))]
+    (add-watch data :sub #(persist storage %3 %4))
     (reify
       Object
       (toString [_]
@@ -54,6 +53,9 @@
       ISeqable
       (-seq [_]
         (seq @data))
+
+      IDeref
+      (-deref [_] @data)
 
       IReset
       (-reset! [self newval]
@@ -77,7 +79,7 @@
 
 
 (defonce storage
-  (make-storage "app" local))
+  (make-storage js/localStorage))
 
 (defonce cache
-  (make-storage "cache" session))
+  (make-storage js/sessionStorage))

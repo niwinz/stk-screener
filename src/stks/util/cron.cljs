@@ -34,16 +34,10 @@
 
 (extend-protocol Inst
   CronDate
-  (inst-ms* [inst] (inst-ms* (obj/get inst "_date"))))
-
-(defn parse
-  [s]
-  (specify! (cp/parseExpression s #js {:tz "UTC"})
-    IPrintWithWriter
-     (-pr-writer [p writer opts]
-       (-write writer (str/fmt "#<Cron '%s'>" (.stringify p true))))))
+  (inst-ms* [inst] (.toMillis ^js (obj/get inst "_date"))))
 
 (defn ms-until-next
-  [c]
-  (- (inst-ms (.next c))
-     (inst-ms (dt/now))))
+  [repr]
+  (let [d (cp/parseExpression repr #js {:tz "UTC"})]
+    (- (inst-ms (.next d))
+       (inst-ms (dt/now)))))

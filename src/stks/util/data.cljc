@@ -8,14 +8,17 @@
   "Data manipulation and query helper functions."
   (:refer-clojure :exclude [concat read-string hash-map merge name])
   (:require
-   [cljs.reader :as r]
-   [cljs.core :as core]))
+   #?(:cljs [cljs.reader :as r]
+      :clj  [clojure.edn :as r])
+   #?(:clj [clojure.core :as c]
+      :cljs [cljs.core :as c])
+   [cuerdas.core :as str]))
 
 (defn name
   "Safer version of cljs.core/name."
   [v]
   (cond
-    (keyword? v) (core/name v)
+    (keyword? v) (c/name v)
     (string? v)  v
     :else        (str v)))
 
@@ -26,25 +29,6 @@
      b))
   ([a b & rest]
    (reduce deep-merge a (cons b rest))))
-
-(defn merge
-  "A faster merge."
-  [& maps]
-  (loop [res  (transient (or (first maps) {}))
-         maps (next maps)]
-    (if (nil? maps)
-      (persistent! res)
-      (recur (reduce-kv assoc! res (first maps))
-             (next maps)))))
-
-(defn concat
-  [& colls]
-  (loop [result (transient (first colls))
-         colls  (next colls)]
-    (if colls
-      (recur (reduce conj! result (first colls))
-             (next colls))
-      (persistent! result))))
 
 (defn enumerate
   ([items] (enumerate items 0))
@@ -130,7 +114,7 @@
   (into {} (remove pred coll)))
 
 (def sentinel
-  (js/Object.))
+  #?(:cljs (js/Object.) :clj (Object.)))
 
 (defn update-in-when
   [m key-seq f & args]
@@ -171,32 +155,6 @@
   [v]
   (not= v v))
 
-(defn- impl-parse-integer
-  [v]
-  (js/parseInt v 10))
-
-(defn- impl-parse-double
-  [v]
-  (js/parseFloat v))
-
-(defn parse-integer
-  ([v]
-   (parse-integer v nil))
-  ([v default]
-   (let [v (impl-parse-integer v)]
-     (if (or (nil? v) (nan? v))
-       default
-       v))))
-
-(defn parse-double
-  ([v]
-   (parse-double v nil))
-  ([v default]
-   (let [v (impl-parse-double v)]
-     (if (or (nil? v) (nan? v))
-       default
-       v))))
-
 (defn read-string
   [v]
   (r/read-string v))
@@ -224,3 +182,14 @@
   "Returns a default value if the given value is nil"
   [v default]
   (if (some? v) v default))
+
+(defn keywordize
+  "A helper that adapts database style row to clojure style map,
+  converting all snake_case attrs into kebab-case, and it only works
+  on a first level of the map."
+  [m]
+  (let [xf #(if (string? %) (keyword (str/replace % #"_" "-")) %)]
+    (persistent!
+     (reduce-kv (fn [m k v] (assoc! m (xf k) v))
+                (transient {}) m))))
+

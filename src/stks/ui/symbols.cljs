@@ -2,9 +2,6 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
 ;; Copyright (c) Andrey Antukh <niwi@niwi.nz>
 
 (ns stks.ui.symbols
@@ -12,14 +9,14 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]
+   [rumext.v2 :as mf]
    [stks.events]
    [stks.repo :as rp]
    [stks.store :as st]
    [stks.ui.messages :as ms]
    [stks.util.data :as d]
-   [stks.util.dom :as dom]
-   [stks.util.fontawesome :as fa]))
+   [stks.util.fontawesome :as fa]
+   [stks.util.webapi :as wa]))
 
 (mf/defc symbol-list
   [{:keys [exchange] :as props}]
@@ -30,12 +27,10 @@
         (mf/use-callback
          (mf/deps @symbols)
          (fn [event]
-           (let [target  (dom/get-target event)
-                 id      (dom/get-value target)
+           (let [target  (wa/get-target event)
+                 id      (wa/get-value target)
                  symbol  (get @symbols id)]
-             (if (.-checked target)
-               (st/emit! (ptk/event :add-symbol symbol))
-               (st/emit! (ptk/event :del-symbol symbol))))))]
+             (st/emit! (ptk/event :toggle-symbol symbol)))))]
 
     (mf/use-effect
      (mf/deps exchange)
@@ -45,6 +40,8 @@
                        (reset! symbols (d/index-by :id data)))))))
 
     [:section.symbols-list
+     #_(when (seq @symbols)
+         [:span (pr-str exchange)])
      (for [{:keys [id] :as item} (->> (vals @symbols)
                                       (sort-by :name))]
        [:div.symbol-item {:key id :title (:desc item)}
@@ -63,24 +60,24 @@
         on-change
         (mf/use-callback
          (fn [event]
-           (let [value (-> (dom/get-target event)
-                           (dom/get-value))]
+           (let [value (-> (wa/get-target event)
+                           (wa/get-value))]
              (reset! exchange value))))]
 
-    (mf/use-effect
-     (fn []
-       (->> (rp/req! :exchanges)
-            (rx/subs (fn [data]
-                       (reset! exchanges data)
-                       (reset! exchange (first data)))))))
+    (mf/with-effect
+      (->> (rp/req! :exchanges)
+           (rx/subs (fn [data]
+                      (prn "KKKKK" data)
+                      (reset! exchanges data)
+                      (reset! exchange (first data))))))
 
-    (when (seq @exchanges)
-      [:section.symbols-section
-       [:section.exchange-selection
-        [:select {:value @exchange
-                  :on-change on-change}
+    [:section.symbols-section
+     [:section.exchange-selection
+      [:select {:value (or @exchange "")
+                :on-change on-change}
 
-         (for [item @exchanges]
-           [:option {:value item :key item} item])]]
+       (for [item @exchanges]
+         [:option {:value item :key item} item])]]
 
-       [:& symbol-list {:exchange @exchange}]])))
+     (when @exchange
+       [:& symbol-list {:exchange @exchange}])]))

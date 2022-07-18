@@ -9,7 +9,7 @@
 
 (ns stks.util.fontawesome
   (:require
-   [rumext.alpha :as mf]
+   [rumext.v2 :as mf]
    ["@fortawesome/free-solid-svg-icons" :as sfa]
    ["@fortawesome/fontawesome-svg-core" :as lfa]
    ["@fortawesome/react-fontawesome" :as fa]))

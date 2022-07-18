@@ -9,12 +9,12 @@
 
 (ns stks.ui.messages
   (:require
+   [potok.core :as ptk]
+   [rumext.v2 :as mf]
    [stks.events.messages :as em]
    [stks.store :as st]
-   [stks.util.dom :as dom]
    [stks.util.fontawesome :as fa]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [stks.util.webapi :as wa]))
 
 (defn- type->icon
   [type]
@@ -27,7 +27,7 @@
 
 (mf/defc message-item
   [{:keys [type status on-close quick? content] :as props}]
-  (let [klass (dom/classnames
+  (let [klass (wa/classnames
                :success (= type :success)
                :error   (= type :error)
                :info    (= type :info)

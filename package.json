@@ -9,20 +9,20 @@
   "author": "Andrey Antukh",
   "license": "SEE LICENSE IN <LICENSE>",
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^1.2.35",
-    "@fortawesome/free-solid-svg-icons": "^5.15.3",
-    "@fortawesome/react-fontawesome": "^0.1.14",
-    "cron-parser": "^3.3.0",
-    "humanize-duration": "^3.25.1",
+    "@fortawesome/fontawesome-svg-core": "^6.1.1",
+    "@fortawesome/free-solid-svg-icons": "^6.1.1",
+    "@fortawesome/react-fontawesome": "^0.2.0",
+    "cron-parser": "^4.5.0",
+    "humanize-duration": "^3.27.2",
     "lodash": "^4.17.21",
-    "luxon": "^1.26.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "rxjs": "^7.0.0-beta.13",
-    "xregexp": "^5.0.1"
+    "luxon": "^3.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rxjs": "^7.5.6",
+    "xregexp": "^5.1.1"
   },
   "devDependencies": {
-    "shadow-cljs": "2.11.26",
-    "source-map-support": "^0.5.19"
+    "shadow-cljs": "2.19.6",
+    "source-map-support": "^0.5.21"
   }
 }
