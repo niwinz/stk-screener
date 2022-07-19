@@ -56,7 +56,7 @@ body {
 main {
   margin-top: 10px;
   display: flex;
-  max-width: 900px;
+  /* max-width: 900px; */
   width: 100%;
   flex-direction: column;
   position: relative;
@@ -113,6 +113,10 @@ main .message .content .icon {
   border-bottom: 1px dotted var(--color-gray-10);
   margin-bottom: 10px;
 
+}
+
+.header nav {
+  margin-right: 10px;
 }
 
 .header nav ul {
@@ -247,9 +251,6 @@ main .message .content .icon {
 
 /* --- SECTION: STRATEGIES --- */
 
-.section-strategies {
-}
-
 .strategies-list {
   display: flex;
   flex-wrap: wrap;
@@ -259,7 +260,7 @@ main .message .content .icon {
 
 .strategy-item {
   width: 430px;
-  margin: 10px;
+  margin: 10px 20px;
   border: 2px solid var(--color-gray-40);
 }
 

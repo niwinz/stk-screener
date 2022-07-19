@@ -149,11 +149,13 @@
                                  :m5 "5"
                                  :m30 "30"
                                  :h4 "240"
+                                 :h1 "60"
                                  :d1 "D")
                    :to (dt/format now :epoch)
                    :from (case timeframe
                            :m5  (-> now (dt/minus {:hours 4}) (dt/format :epoch))
                            :m30 (-> now (dt/minus {:days 3})  (dt/format :epoch))
+                           :h1  (-> now (dt/minus {:days 6})  (dt/format :epoch))
                            :h4  (-> now (dt/minus {:days 13}) (dt/format :epoch))
                            :d1  (-> now (dt/minus {:days 60}) (dt/format :epoch)))
                    :indicator "macd"}]

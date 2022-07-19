@@ -17,22 +17,22 @@
    [stks.util.logging :as log]
    [stks.util.spec :as us]
    [stks.util.time :as dt]
-   [stks.util.timers :as tm]
-   [stks.util.transit :as t]
-   [stks.util.uuid :as uuid]))
+   [stks.util.timers :as tm]))
 
 (log/set-level! :trace)
 
 (def available-strategies
-  [{:id :macd-m30
-    :main :m30
+  [{:id :macd-m5
+    :main :m5
     :reference :h4}
-   {:id :macd-h4
-    :main :h4
+   {:id :macd-h1
+    :main :h1
     :reference :d1}])
 
 (def cron-exprs
   {:m30 "0 */30 * * * *"
+   :h1  "0 0 * * * *"
+   :m5  "0 */5 * * * *"
    :h4  "0 0 */4 * * *"
    :d1  "0 0 0 * * *"})
 
@@ -107,9 +107,9 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:nav :strategies])]
-        (log/trace :hint "execute strategies"
-                   :symbol-id (:id sdata)
-                   :strategies selected)
+        ;; (log/trace :hint "execute strategies"
+        ;;            :symbol-id (:id sdata)
+        ;;            :strategies selected)
 
         (->> (rx/from (seq available-strategies))
              (rx/filter #(contains? selected (:id %)))
@@ -148,24 +148,45 @@
 
 ;; --- STRATEGY IMPL
 
-(derive :macd-m30 ::macd)
-(derive :macd-h4 ::macd)
+(derive :macd-m5 ::macd)
+(derive :macd-h1 ::macd)
 
 (defmethod execute-strategy ::macd
   [{:keys [main ref strategy-id] :as sdata}]
-  ;; (println "========== init execute-strategy" strategy-id)
-  ;; (cljs.pprint/pprint main)
-  ;; (cljs.pprint/pprint ref)
-  ;; (println "========== end  execute-strategy" strategy-id)
-  (let [main (-> main :entries first)
-        res  (->> (:entries ref)
-                  (take 2)
-                  (map #(if (> (:macd1 %) (:macd2 %)) :up :down)))]
-    (cond
-      (and (every? (partial = :up) res)
-           (neg? (:macd1 main)))
-      {:dir :up}
+  (letfn [(growing? [data]
+            (loop [prev  ##Inf
+                   items (seq data)]
+              (if-let [current (some-> items first :macd2)]
+                (if (> prev current)
+                  (recur current (rest items))
+                  false)
+                true)))
 
-      (and (every? (partial = :down) res)
-           (pos? (:macd1 main)))
-      {:dir :down})))
+          (decreasing? [data]
+            (loop [prev  ##-Inf
+                   items (seq data)]
+              (if-let [current (some-> items first :macd2)]
+                (if (< prev current)
+                  (recur current (rest items))
+                  false)
+                true)))]
+
+    (let [main (->> main :entries first)
+          ref  (->> ref :entries  (drop 1) (take 3))]
+
+      ;; (println "========== init execute-strategy" strategy-id)
+      ;; (cljs.pprint/pprint main)
+      ;; (cljs.pprint/pprint ref)
+      ;; (println "========== end  execute-strategy" strategy-id)
+
+      (cond
+        (and (growing? ref)
+             (neg? (:macd1 main))
+             (neg? (:macd2 main)))
+        {:dir :up}
+
+        (and (decreasing? ref)
+             (pos? (:macd1 main))
+             (pos? (:macd2 main)))
+
+        {:dir :down}))))
