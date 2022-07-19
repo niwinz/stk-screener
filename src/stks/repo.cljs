@@ -121,7 +121,7 @@
 (defmethod request :symbol-data
   [id {:keys [id timeframe] :as params} opts]
   (letfn [(extract-field [data field]
-            (-> (obj/get data "macd") (seq) (reverse)))
+            (-> (obj/get data field) (seq) (reverse)))
           (on-data [data]
             ;; (js/console.log data)
             (let [macd1   (extract-field data "macd")

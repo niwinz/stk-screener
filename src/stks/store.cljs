@@ -6,14 +6,12 @@
 
 (ns stks.store
   (:require
-   [stks.util.logging :as log]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
-   [beicon.core :as rx]
-   [stks.util.data :as d]
-   [stks.util.storage :refer [storage]]
-   [stks.util.timers :as tm]))
+   [stks.util.logging :as log]
+   [stks.util.storage :refer [storage]]))
 
 (log/set-level! :info)
 

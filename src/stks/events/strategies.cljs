@@ -6,24 +6,20 @@
 
 (ns stks.events.strategies
   (:require
-   [stks.util.logging :as log]
    [beicon.core :as rx]
-   [cljs.core.async :as a]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
    [stks.repo :as rp]
-   [stks.events.messages :as em]
-   [stks.util.closeable :as cs]
    [stks.util.cron :as cron]
    [stks.util.data :as d]
-   [stks.util.exceptions :as ex]
+   [stks.util.logging :as log]
    [stks.util.spec :as us]
-   [stks.util.storage :refer [storage]]
    [stks.util.time :as dt]
-   [stks.util.uuid :as uuid]
-   [stks.util.transit :as t]))
+   [stks.util.timers :as tm]
+   [stks.util.transit :as t]
+   [stks.util.uuid :as uuid]))
 
 (log/set-level! :trace)
 
@@ -40,11 +36,74 @@
    :h4  "0 0 */4 * * *"
    :d1  "0 0 0 * * *"})
 
+;; --- SYMBOLS & SCHEDULER
+
+(defn- get-timeframes
+  "Get required timeframes for the currently selected strategies."
+  [{:keys [nav] :as state}]
+  (reduce (fn [res id]
+            (let [strategy (d/seek #(= id (:id %)) available-strategies)]
+              (into res ((juxt :main :reference) strategy))))
+          #{}
+          (:strategies nav)))
+
+(defn- create-scheduler
+  [id tfs]
+  (letfn [(next-wait []
+            (apply min (->> tfs
+                            (map #(get cron-exprs %))
+                            (map #(cron/ms-until-next %)))))
+
+          (on-subscribe [subscriber]
+            (log/trace :hint "subscribe to symbol scheduler" :symbol-id id :timeframes tfs)
+            (let [sem (atom nil)
+                  efn (fn emmiter []
+                        (rx/push! subscriber id)
+                        (let [rsc (tm/schedule (next-wait) emmiter)]
+                          (reset! sem rsc)))]
+              (efn)
+              (fn []
+                (log/trace :hint "unsubscribe from symbol scheduler" :symbol-id id :timeframes tfs)
+                (when-let [rsc (deref sem)]
+                  (tm/dispose! rsc)
+                  (reset! sem nil)))))]
+
+    (rx/create on-subscribe)))
+
+(defmethod ptk/resolve ::initialize-scheduler
+  [_ _]
+  (ptk/reify ::initialize-scheduler
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [tframes (get-timeframes state)
+            symbols (-> state :nav :symbols)
+            stoper  (rx/merge
+                     (rx/filter (ptk/type? :stop) stream)
+                     (rx/filter (ptk/type? ::terminate-scheduler) stream)
+                     (rx/filter (ptk/type? ::initialize-scheduler) stream))]
+
+        (when (and (seq tframes) (seq symbols))
+          (->> (rx/from (seq symbols))
+               (rx/merge-map (fn [symbol-id]
+                               (->> (create-scheduler symbol-id tframes)
+                                    (rx/mapcat (fn [symbol-id]
+                                                 (->> (rx/from tframes)
+                                                      (rx/map #(array-map :id symbol-id :timeframe %))
+                                                      (rx/mapcat #(rp/req! :symbol-data %))
+                                                      (rx/reduce conj [])
+                                                      ;; (rx/tap #(prn "FF1" %))
+                                                      (rx/map (fn [data]
+                                                                (let [data (d/index-by :timeframe data)]
+                                                                  (assoc data :id symbol-id)))))))
+                                    (rx/map #(ptk/event ::execute-strategies %)))))
+               (rx/take-until stoper)))))))
+
+
 ;; --- STRATEGY SETUP EVENTS
 
-(defmethod ptk/resolve ::execute
+(defmethod ptk/resolve ::execute-strategies
   [_ sdata]
-  (ptk/reify :execute
+  (ptk/reify ::execute-strategies
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:nav :strategies])]
@@ -59,7 +118,7 @@
                         :strategy-id (:id strategy)
                         :main        (get sdata (:main strategy))
                         :ref         (get sdata (:reference strategy))}))
-             (rx/map #(ptk/event :execute-strategy %))
+             (rx/map #(ptk/event ::execute-strategy %))
              (rx/observe-on :async))))))
 
 (defmulti execute-strategy :strategy-id)
@@ -93,13 +152,15 @@
 (derive :macd-h4 ::macd)
 
 (defmethod execute-strategy ::macd
-  [{:keys [main ref] :as sdata}]
-  ;; (println "========== init execute-strategy" :macd-m30)
+  [{:keys [main ref strategy-id] :as sdata}]
+  ;; (println "========== init execute-strategy" strategy-id)
   ;; (cljs.pprint/pprint main)
   ;; (cljs.pprint/pprint ref)
-  ;; (println "========== end  execute-strategy" :macd-m30)
+  ;; (println "========== end  execute-strategy" strategy-id)
   (let [main (-> main :entries first)
-        res  (map #(if (> (:macd1 %) (:macd2 %)) :up :down) (:entries ref))]
+        res  (->> (:entries ref)
+                  (take 2)
+                  (map #(if (> (:macd1 %) (:macd2 %)) :up :down)))]
     (cond
       (and (every? (partial = :up) res)
            (neg? (:macd1 main)))

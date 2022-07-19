@@ -6,25 +6,18 @@
 
 (ns stks.events
   (:require
-   [stks.util.logging :as log]
-   [lambdaisland.uri :as u]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
+   [lambdaisland.uri :as u]
    [okulary.core :as l]
    [potok.core :as ptk]
-   [stks.repo :as rp]
-   [stks.events.types.nav :as-alias t.nav]
-   [stks.events.symbols :as sym]
-   [stks.events.strategies]
-   [stks.events.messages :as em]
-   [stks.util.data :as d]
-   [stks.util.webapi :as wa]
-   [stks.util.exceptions :as ex]
+   [stks.events.strategies :as stg]
+   [stks.events.types.nav :as-alias types.nav]
+   [stks.util.logging :as log]
    [stks.util.spec :as us]
    [stks.util.storage :refer [storage]]
-   [stks.util.time :as dt]
-   [stks.util.transit :as t]))
+   [stks.util.webapi :as wa]))
 
 (log/set-level! :trace)
 
@@ -80,17 +73,17 @@
   (ptk/reify :initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (ptk/event ::sym/initialize-scheduler)))))
+      (rx/of (ptk/event ::stg/initialize-scheduler)))))
 
-(s/def ::t.nav/section ::us/keyword)
-(s/def ::t.nav/token ::us/string)
-(s/def ::t.nav/strategies ::us/set-of-kw)
-(s/def ::t.nav/symbols ::us/set-of-str)
-(s/def ::t.nav/params
-  (s/keys :opt-un [::t.nav/section
-                   ::t.nav/token
-                   ::t.nav/strategies
-                   ::t.nav/symbols]))
+(s/def ::types.nav/section ::us/keyword)
+(s/def ::types.nav/token ::us/string)
+(s/def ::types.nav/strategies ::us/set-of-kw)
+(s/def ::types.nav/symbols ::us/set-of-str)
+(s/def ::types.nav/params
+  (s/keys :opt-un [::types.nav/section
+                   ::types.nav/token
+                   ::types.nav/strategies
+                   ::types.nav/symbols]))
 
 (defmethod ptk/resolve :nav
   [_ params]
@@ -109,12 +102,12 @@
                                         (assoc res k v)))
                                     nav
                                     params)))
-          (update :nav #(us/conform ::t.nav/params %))))
+          (update :nav #(us/conform ::types.nav/params %))))
 
     ptk/EffectEvent
     (effect [_ state stream]
       (let [uri   (wa/get-current-uri)
-            nav   (s/unform ::t.nav/params (:nav state))
+            nav   (s/unform ::types.nav/params (:nav state))
             query (u/map->query-string nav)
             uri   (assoc uri :query query)]
         (.pushState js/history #js {} "" (str uri))))))
@@ -128,13 +121,13 @@
         (if (contains? strategies id)
           (let [strategies (disj strategies id)]
             (rx/of (ptk/event :nav {:strategies (if (empty? strategies) nil strategies)})
-                   (ptk/event ::sym/initialize-scheduler)
+                   (ptk/event ::stg/initialize-scheduler)
                    #(update % :signals dissoc id)))
 
 
           (let [strategies (conj strategies id)]
             (rx/of (ptk/event :nav {:strategies strategies})
-                   (ptk/event ::sym/initialize-scheduler))))))))
+                   (ptk/event ::stg/initialize-scheduler))))))))
 
 (defmethod ptk/resolve :toggle-symbol
   [_ {:keys [id] :as symbol}]
@@ -151,4 +144,4 @@
            (rx/of (ptk/event :nav {:symbols (disj symbols id)}))
            (rx/of (ptk/event :nav {:symbols (conj symbols id)})))
 
-         (rx/of (ptk/event ::sym/initialize-scheduler)))))))
+         (rx/of (ptk/event ::stg/initialize-scheduler)))))))

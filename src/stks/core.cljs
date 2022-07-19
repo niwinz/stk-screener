@@ -25,7 +25,7 @@
 
 (defn start
   [& args]
-  (log/info :msg "initializing")
+  (log/info :hint "initializing")
   (st/init)
   (st/emit! (ptk/event :setup))
   (mf/render! root (mf/element ui/app)))
@@ -34,7 +34,7 @@
   [done]
   ;; an empty line for visual feedback of restart
   (js/console.log "")
-  (log/info :msg "stoping")
+  (log/info :hint "stoping")
   (st/emit! (ptk/event :stop))
   (done))
 
