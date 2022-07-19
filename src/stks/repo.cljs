@@ -37,10 +37,10 @@
              (< age max-age)
              (not disable))
       (do
-        (log/trace :cache :hit :age age :key key)
+        (log/trace :cache "hit" :age (str/concat age) :key key)
         (rx/of (:data entry)))
       (do
-        (log/trace :cache :miss :key key)
+        (log/trace :cache "miss" :key key)
         (->> observable
              (rx/tap (fn [data]
                        (let [entry {:created-at (dt/now) :data data}]
@@ -138,10 +138,6 @@
                                (take 5 macd2)
                                (take 5 close)
                                (take 5 ts))]
-
-              ;; (prn "REPO" :symbol-data)
-              ;; (stks.util.pprint/pprint entries)
-
               {:symbol-id   id
                :timeframe timeframe
                :entries entries}))

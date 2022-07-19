@@ -28,7 +28,16 @@
 
 (log/set-level! :trace)
 
-(defn create-scheduler
+(defn- get-timeframes
+  "Get required timeframes for the currently selected strategies."
+  [{:keys [nav] :as state}]
+  (reduce (fn [res id]
+            (let [strategy (d/seek #(= id (:id %)) stg/available-strategies)]
+              (into res ((juxt :main :reference) strategy))))
+          #{}
+          (:strategies nav)))
+
+(defn- create-scheduler
   [id tfs]
   (letfn [(next-wait []
             (apply min (->> tfs
@@ -36,7 +45,7 @@
                             (map #(cron/ms-until-next %)))))
 
           (on-subscribe [subscriber]
-            (log/trace :hint "subscribe to symbol scheduler" :symbol id)
+            (log/trace :hint "subscribe to symbol scheduler" :symbol-id id :timeframes tfs)
             (let [sem (atom nil)
                   efn (fn emmiter []
                         (rx/push! subscriber id)
@@ -44,58 +53,34 @@
                           (reset! sem rsc)))]
               (efn)
               (fn []
-                (log/trace :hint "unsubscribe from symbol scheduler" :symbol id)
+                (log/trace :hint "unsubscribe from symbol scheduler" :symbol-id id :timeframes tfs)
                 (when-let [rsc (deref sem)]
                   (tm/dispose! rsc)
                   (reset! sem nil)))))]
 
     (rx/create on-subscribe)))
 
-
-(defmethod ptk/resolve :stop-symbol-scheduler
-  [_ {:keys [id]}]
-  (ptk/reify :stop-symbol-scheduler
-    IDeref
-    (-deref [_] id)))
-
-(defmethod ptk/resolve :init-symbol-scheduler
-  [_ {:keys [id] :as params}]
-  (ptk/reify :init-symbol-scheduler
-    IDeref
-    (-deref [_] params)
-
+(defmethod ptk/resolve ::initialize-scheduler
+  [_ _]
+  (ptk/reify ::initialize-scheduler
     ptk/WatchEvent
     (watch [_ state stream]
-      (when-let [tfs (seq (stg/get-timeframes state))]
-        (let [stoper (rx/merge
-                      (rx/filter (ptk/type? :stop) stream)
-                      (->> stream
-                           (rx/filter (ptk/type? :stop-symbol-scheduler))
-                           (rx/filter #(= id (deref %)))))]
-          (rx/merge
-           (->> (create-scheduler id tfs)
-                (rx/map #(ptk/event :fetch-symbol-data {:id %}))
-                (rx/take-until stoper)
-                (rx/observe-on :async))
+      (let [tframes (get-timeframes state)
+            symbols (-> state :nav :symbols)
+            stoper  (rx/merge
+                     (rx/filter (ptk/type? :stop) stream)
+                     (rx/filter (ptk/type? ::terminate-scheduler) stream)
+                     (rx/filter (ptk/type? ::initialize-scheduler) stream))]
 
-           (->> stream
-                (rx/filter (ptk/type? :symbol-data))
-                (rx/filter #(= id (:id (deref %))))
-                (rx/map deref)
-                (rx/map #(ptk/event :execute-strategies %))
-                (rx/take-until stoper))))))))
-
-(defmethod ptk/resolve :fetch-symbol-data
-  [_ {:keys [id]}]
-  (ptk/reify :fetch-symbol-data
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (log/trace :event :fetch-symbol-data :method :watch :symbol id)
-      (let [tfs (stg/get-timeframes state)]
-        (->> (rx/from (seq tfs))
-             (rx/mapcat #(rp/req! :symbol-data {:id id :timeframe %}))
-             (rx/reduce conj [])
-             (rx/map (fn [data]
-                       (let [data (d/index-by :timeframe data)
-                             data (assoc data :id id)]
-                         (ptk/data-event :symbol-data data)))))))))
+        (when (and (seq tframes) (seq symbols))
+          (->> (rx/from (seq symbols))
+               (rx/merge-map (fn [symbol-id]
+                               (->> (create-scheduler symbol-id tframes)
+                                    (rx/mapcat (constantly tframes))
+                                    (rx/mapcat #(rp/req! :symbol-data {:id symbol-id :timeframe %}))
+                                    (rx/reduce conj [])
+                                    (rx/map (fn [data]
+                                              (let [data (d/index-by :timeframe data)]
+                                                (assoc data :id symbol-id))))
+                                    (rx/map #(ptk/event ::stg/execute %)))))
+               (rx/take-until stoper)))))))

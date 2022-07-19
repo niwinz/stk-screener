@@ -10,7 +10,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.v2 :as mf]
-   [stks.events.strategies :refer [strategies]]
+   [stks.events.strategies :refer [available-strategies]]
    [stks.events]
    [stks.repo :as rp]
    [stks.store :as st]
@@ -53,5 +53,5 @@
   [props]
   [:section.strategies-section
    [:div.strategies-list
-    (for [item strategies]
+    (for [item available-strategies]
       [:& strategy-item {:item item :key (:id item)}])]])

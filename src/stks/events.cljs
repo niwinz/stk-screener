@@ -15,7 +15,7 @@
    [potok.core :as ptk]
    [stks.repo :as rp]
    [stks.events.types.nav :as-alias t.nav]
-   [stks.events.symbols]
+   [stks.events.symbols :as sym]
    [stks.events.strategies]
    [stks.events.messages :as em]
    [stks.util.data :as d]
@@ -80,10 +80,7 @@
   (ptk/reify :initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [{:keys [symbols strategies]} (:nav state)]
-        (when (seq strategies)
-          (->> (rx/from (seq symbols))
-               (rx/map #(ptk/event :init-symbol-scheduler {:id %}))))))))
+      (rx/of (ptk/event ::sym/initialize-scheduler)))))
 
 (s/def ::t.nav/section ::us/keyword)
 (s/def ::t.nav/token ::us/string)
@@ -117,7 +114,7 @@
     ptk/EffectEvent
     (effect [_ state stream]
       (let [uri   (wa/get-current-uri)
-            nav   (s/unform ::nav (:nav state))
+            nav   (s/unform ::t.nav/params (:nav state))
             query (u/map->query-string nav)
             uri   (assoc uri :query query)]
         (.pushState js/history #js {} "" (str uri))))))
@@ -130,18 +127,14 @@
       (let [{:keys [strategies symbols] :or {strategies #{}}} (:nav state)]
         (if (contains? strategies id)
           (let [strategies (disj strategies id)]
-            (rx/concat
-             (rx/of (ptk/event :nav {:strategies (if (empty? strategies) nil strategies)})
-                    #(update % :signals dissoc id))
+            (rx/of (ptk/event :nav {:strategies (if (empty? strategies) nil strategies)})
+                   (ptk/event ::sym/initialize-scheduler)
+                   #(update % :signals dissoc id)))
 
-             (->> (rx/from (seq symbols))
-                  (rx/map #(ptk/event :stop-symbol-scheduler {:id %})))))
 
           (let [strategies (conj strategies id)]
-            (rx/concat
-             (rx/of (ptk/event :nav {:strategies strategies}))
-             (->> (rx/from (seq symbols))
-                  (rx/map #(ptk/event :init-symbol-scheduler {:id %}))))))))))
+            (rx/of (ptk/event :nav {:strategies strategies})
+                   (ptk/event ::sym/initialize-scheduler))))))))
 
 (defmethod ptk/resolve :toggle-symbol
   [_ {:keys [id] :as symbol}]
@@ -153,8 +146,9 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [symbols (get-in state [:nav :symbols] #{})]
-        (if (contains? symbols id)
-          (rx/of (ptk/event :nav {:symbols (disj symbols id)})
-                 (ptk/event :stop-symbol-scheduler {:id id}))
-          (rx/of (ptk/event :nav {:symbols (conj symbols id)})
-                 (ptk/event :init-symbol-scheduler {:id id})))))))
+        (rx/concat
+         (if (contains? symbols id)
+           (rx/of (ptk/event :nav {:symbols (disj symbols id)}))
+           (rx/of (ptk/event :nav {:symbols (conj symbols id)})))
+
+         (rx/of (ptk/event ::sym/initialize-scheduler)))))))
