@@ -14,6 +14,12 @@
       :cljs [cljs.core :as c])
    [cuerdas.core :as str]))
 
+#?(:cljs
+   (extend-protocol cljs.core/INamed
+     string
+     (-name [s] s)
+     (-namespace [s] "")))
+
 (defn name
   "Safer version of cljs.core/name."
   [v]

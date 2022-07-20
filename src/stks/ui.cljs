@@ -14,7 +14,7 @@
    [stks.events]
    [stks.store :as st]
    [stks.ui.auth :refer [auth-section]]
-   [stks.ui.dashboard :refer [dashboard-section]]
+   [stks.ui.screener :refer [screener-section]]
    [stks.ui.header :refer [header]]
    [stks.ui.messages :as ms]
    [stks.ui.strategies :refer [strategies-section]]
@@ -32,7 +32,7 @@
      (case (:section nav)
        :auth       [:& auth-section]
        :settings   [:& settings-section]
-       :dashboard  [:& dashboard-section]
+       :screener   [:& screener-section]
        :strategies [:& strategies-section]
        [:span "not found"])]))
 

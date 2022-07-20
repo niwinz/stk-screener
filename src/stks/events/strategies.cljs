@@ -129,6 +129,7 @@
   (ptk/reify ::execute-strategy
     ptk/UpdateEvent
     (update [_ state]
+      ;; (prn "KKKK" params)
       (let [result (execute-strategy params)
             now    (dt/now)]
         (log/trace :hint "execute strategy"

@@ -6,52 +6,67 @@
 
 (ns stks.ui.strategies
   (:require
-   [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.v2 :as mf]
-   [stks.events.strategies :refer [available-strategies]]
    [stks.events]
-   [stks.repo :as rp]
    [stks.store :as st]
    [stks.ui.messages :as ms]
    [stks.util.data :as d]
+   [stks.util.data :as d]
    [stks.util.fontawesome :as fa]
+   [stks.util.time :as dt]
+   [stks.util.timers :as tm]
    [stks.util.webapi :as wa]))
 
-(extend-protocol cljs.core/INamed
-  string
-  (-name [s] s)
-  (-namespace [s] ""))
+(mf/defc symbol-item
+  [{:keys [symbol-id strategy-id created-at updated-at direction inactive]}]
+  (let [symbol-name   (get-in @st/state [:symbols symbol-id :name])
+        toggle-status (mf/with-memo [symbol-id strategy-id]
+                        (fn []
+                          (st/emit! #(update-in % [:signals strategy-id symbol-id :inactive] not))))]
+
+    [:div.symbol-entry
+     {:key (str/concat symbol-id)
+      :style {:user-select "none"}
+      :on-click toggle-status
+      :class (wa/classnames
+              :direction-up (= :up direction)
+              :direction-down (= :down direction)
+              :inactive inactive)}
+     [:div.id (or symbol-name symbol-id)]
+     [:div.dir (case direction :up "⇈" :down "⇊")]
+     [:div.age (dt/age created-at (dt/now))]]))
 
 (mf/defc strategy-item
-  [{:keys [item] :as props}]
-  (let [nav (mf/deref st/nav-ref)
-        id  (:id item)
+  {::mf/wrap [mf/memo]}
+  [{:keys [strategy-id] :as props}]
+  (let [symbols (mf/deref st/symbols-ref)
+        signals (mf/deref st/signals-ref)
+        render  (mf/use-state 0)]
 
-        on-click
-        (mf/use-callback
-         (mf/deps item)
-         (fn []
-           (st/emit! (ptk/event :toggle-strategy item))))]
+    (mf/with-effect
+      (tm/repeat 2000 #(swap! render inc)))
 
-    [:fieldset.strategy-item
-     {:on-click on-click
-      :class (wa/classnames
-              :active (contains? (:strategies nav) id))}
-     [:legend "Strategy: " (str (:id item))]
-
-     [:div.field
-      [:label "Main TF: "]
-      [:span (str/upper (name (:main item)))]]
-
-     [:div.field
-      [:label "Reference TF: "]
-      [:span (str/upper (name (:reference item)))]]]))
+    [:*
+     [:fieldset.strategy-item
+      [:legend (pr-str strategy-id)]
+      (for [symbol-id symbols]
+        (when-let [data (get-in signals [strategy-id symbol-id])]
+          [:& symbol-item {:key (str/concat symbol-id)
+                           :symbol-id symbol-id
+                           :strategy-id strategy-id
+                           :created-at (:created-at data)
+                           :updated-at (:updated-at data)
+                           :inactive (:inactive data)
+                           :direction (:dir data)}]))]]))
 
 (mf/defc strategies-section
   [props]
-  [:section.strategies-section
-   [:div.strategies-list
-    (for [item available-strategies]
-      [:& strategy-item {:item item :key (:id item)}])]])
+  (let [strategies (mf/deref st/strategies-ref)
+        signals    (mf/deref st/signals-ref)]
+    [:section.strategies
+     (for [id (sort strategies)]
+       [:& strategy-item
+        {:key (str/concat id)
+         :strategy-id id}])]))

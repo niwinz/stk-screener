@@ -56,10 +56,10 @@ body {
 main {
   margin-top: 10px;
   display: flex;
-  /* max-width: 900px; */
   width: 100%;
   flex-direction: column;
   position: relative;
+  align-items: center;
 }
 
 main .message {
@@ -107,6 +107,7 @@ main .message .content .icon {
 /* --- SECTION: HEADER --- */
 
 .header {
+  width: 100vw;
   display: flex;
   justify-content: flex-end;
   padding-bottom: 10px;
@@ -156,14 +157,15 @@ main .message .content .icon {
   height: 34px;
 }
 
-/* --- SECTION: DASHBOARD --- */
+/* --- SECTION: STRATEGIES --- */
 
-.dashboard {
+.strategies {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
-.dashboard .strategy-item {
+.strategies .strategy-item {
   width: auto;
   display: flex;
   justify-content: flex-start;
@@ -172,14 +174,14 @@ main .message .content .icon {
   cursor: pointer;
 }
 
-.dashboard .strategy-item > legend {
+.strategies .strategy-item > legend {
   background-color: white;
   border: 1px solid var(--color-primary-6);
   border-radius: 3px;
   padding: 2px 10px;
 }
 
-.dashboard .symbol-entry {
+.strategies .symbol-entry {
   border: 2px solid var(--color-gray-40);
   margin: 10px 10px;
   width: 150px;
@@ -190,29 +192,29 @@ main .message .content .icon {
   align-items: center;
 }
 
-.dashboard .symbol-entry.direction-up {
+.strategies .symbol-entry.direction-up {
   border-color: var(--color-success);
 }
 
-.dashboard .symbol-entry.direction-down {
+.strategies .symbol-entry.direction-down {
   border-color: var(--color-danger);
 }
 
-.dashboard .symbol-entry.inactive {
+.strategies .symbol-entry.inactive {
   opacity: 20%;
 }
 
-.dashboard .symbol-entry .id {
+.strategies .symbol-entry .id {
   color: var(--color-gray-60);
   font-weight: 200;
 }
 
-.dashboard .symbol-entry .dir {
+.strategies .symbol-entry .dir {
   color: var(--color-gray-60);
   font-weight: 900;
 }
 
-.dashboard .symbol-entry .age {
+.strategies .symbol-entry .age {
   color: var(--color-gray-60);
   font-weight: 200;
 }
@@ -268,8 +270,6 @@ main .message .content .icon {
   height: 65vh;
 }
 
-/* --- SECTION: STRATEGIES --- */
-
 .strategies-list {
   display: flex;
   flex-wrap: wrap;
@@ -298,11 +298,98 @@ main .message .content .icon {
   margin-left: 5px;
 }
 
-
-
 .strategy-item .field {
   padding: 6px;
 }
+
+/* --- SECTION: SCREENER --- */
+
+.screener {
+  display: flex;
+  margin: 20px;
+  flex-direction: column;
+  /* align-items: center; */
+  max-width: 1200px;
+  width: 100%;
+
+  /* outline: 1px solid red; */
+}
+
+.screener .table-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.screener .screener-item {
+  /* outline: 1px solid green; */
+  margin: 5px;
+  padding: 5px;
+  border: 1px dotted var(--color-gray-5);
+  display: flex;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.screener .screener-item:hover {
+  border: 1px dotted var(--color-gray-10);
+  background-color: var(--color-gray-5);
+}
+
+
+.screener .screener-item .symbol-name {
+  display: flex;
+  width: 90px;
+  margin-right: 10px;
+}
+
+.screener .screener-item .timings {
+  width: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-right: 30px;
+}
+
+.screener .screener-item .timings > div {
+  display: flex;
+}
+
+
+.screener .screener-item .direction {
+  font-weight: 500;
+  display: flex;
+}
+
+.screener .screener-item .spacer {
+  flex-grow: 1;
+}
+
+.screener .screener-item .indicator {
+  font-weight: 200;
+  margin-left: 3px;
+  font-size: 14px;
+}
+
+.screener .screener-item .signals {
+  display: flex;
+}
+
+.screener .screener-item .signals > span {
+  font-size: 14xpx;
+  padding: 2px 4px;
+  /* border-radius: 2px; */
+  /* background-color: var(--color-gray-5); */
+  /* border-bottom: 1px solid var(--color-gray-5); */
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+}
+
+.screener .screener-item .signals > span:not(:last-child) {
+  margin-right: 5px;
+}
+
 
 /* --- SECTION: AUTH --- */
 

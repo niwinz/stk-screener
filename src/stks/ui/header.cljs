@@ -20,7 +20,7 @@
   (let [logout         #(st/emit! (ptk/event :logout))
         nav-settings   #(st/emit! (ptk/event :nav {:section :settings}))
         nav-strategies #(st/emit! (ptk/event :nav {:section :strategies}))
-        nav-dashboard  #(st/emit! (ptk/event :nav {:section :dashboard}))]
+        nav-screener   #(st/emit! (ptk/event :nav {:section :screener}))]
 
     [:*
      [:& ms/messages]
@@ -32,16 +32,16 @@
         [:span " / "]
         [:span (case (:section nav)
                  :settings "Settings"
-                 :dashboard "Dashboard"
+                 :screener "Screener"
                  :strategies "Strategies"
                  :auth "Authentication")]]]
       (when-let [{:keys [section]} nav]
         [:nav
          (when (not= :auth section)
            [:ul
-            [:li {:on-click nav-dashboard
-                  :class (when (= :dashboard section) "active")}
-             "Dashboard"]
+            [:li {:on-click nav-screener
+                  :class (when (= :screener section) "active")}
+             "Screener"]
 
             [:li {:on-click nav-strategies
                   :class (when (= :strategies section) "active")}
