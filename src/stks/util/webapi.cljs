@@ -61,6 +61,10 @@
   [el query]
   (.querySelector el query))
 
+(defn query-all
+  [el query]
+  (.querySelectorAll el query))
+
 (defn focus!
   [node]
   (.focus ^js node))

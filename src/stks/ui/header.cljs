@@ -18,7 +18,7 @@
 (mf/defc header
   [{:keys [nav] :as props}]
   (let [logout         #(st/emit! (ptk/event :logout))
-        nav-symbols    #(st/emit! (ptk/event :nav {:section :symbols}))
+        nav-settings   #(st/emit! (ptk/event :nav {:section :settings}))
         nav-strategies #(st/emit! (ptk/event :nav {:section :strategies}))
         nav-dashboard  #(st/emit! (ptk/event :nav {:section :dashboard}))]
 
@@ -31,7 +31,7 @@
         [:span "§§"]
         [:span " / "]
         [:span (case (:section nav)
-                 :symbols "Symbols"
+                 :settings "Settings"
                  :dashboard "Dashboard"
                  :strategies "Strategies"
                  :auth "Authentication")]]]
@@ -47,8 +47,8 @@
                   :class (when (= :strategies section) "active")}
              "Strategies"]
 
-            [:li {:on-click nav-symbols
-                  :class (when (= :symbols section) "active")}
-             "Symbols"]
+            [:li {:on-click nav-settings
+                  :class (when (= :settings section) "active")}
+             "Settings"]
 
             [:li {:on-click logout} "<- Quit"]])])]]))

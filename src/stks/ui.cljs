@@ -18,7 +18,7 @@
    [stks.ui.header :refer [header]]
    [stks.ui.messages :as ms]
    [stks.ui.strategies :refer [strategies-section]]
-   [stks.ui.symbols :refer [symbols-section]]
+   [stks.ui.settings :refer [settings-section]]
    [stks.util.data :as d]
    [stks.util.fontawesome :as fa]
    [stks.util.pprint :as pp]
@@ -31,7 +31,7 @@
      [:& header {:nav nav}]
      (case (:section nav)
        :auth       [:& auth-section]
-       :symbols    [:& symbols-section]
+       :settings   [:& settings-section]
        :dashboard  [:& dashboard-section]
        :strategies [:& strategies-section]
        [:span "not found"])]))

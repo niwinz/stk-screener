@@ -12,6 +12,7 @@
    [lambdaisland.uri :as u]
    [okulary.core :as l]
    [potok.core :as ptk]
+   [clojure.set :as set]
    [stks.events.strategies :as stg]
    [stks.events.types.nav :as-alias types.nav]
    [stks.util.logging :as log]
@@ -27,10 +28,6 @@
   [_ {:keys [token]}]
   (us/assert string? token)
   (ptk/reify :authenticate
-    ;; ptk/UpdateEvent
-    ;; (update [_ state]
-    ;;   (assoc state :token token))
-
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/of (ptk/event :nav {:section :dashboard})))
@@ -62,9 +59,12 @@
       (let [uri    (wa/get-current-uri)
             token  (:stks/token storage)
             params (u/query-string->map (:query uri))
-            params (if (nil? token)
-                     (assoc params :section :auth)
-                     (assoc params :section :dashboard))]
+            params (cond-> params
+                     (nil? token)
+                     (assoc :section :auth)
+
+                     (nil? (:section params))
+                     (assoc :section :dashboard))]
         (rx/of (ptk/event :nav params)
                (ptk/event :initialize))))))
 
@@ -112,6 +112,21 @@
             uri   (assoc uri :query query)]
         (.pushState js/history #js {} "" (str uri))))))
 
+(defmethod ptk/resolve :select-strategies
+  [_ {:keys [strategies]}]
+  (us/verify! ::us/set-of-str strategies)
+  (ptk/reify ::select-strategies
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :signals (fn [data]
+                               (let [current-keys (into #{} (keys data))
+                                     remove-keys  (set/difference current-keys strategies)]
+                                 (reduce dissoc data remove-keys)))))
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (ptk/event :nav {:strategies strategies})
+             (ptk/event ::stg/initialize-scheduler)))))
+
 (defmethod ptk/resolve :toggle-strategy
   [_ {:keys [id] :as strategy}]
   (ptk/reify :activate-strategy
@@ -128,6 +143,19 @@
           (let [strategies (conj strategies id)]
             (rx/of (ptk/event :nav {:strategies strategies})
                    (ptk/event ::stg/initialize-scheduler))))))))
+
+(defmethod ptk/resolve :select-symbols
+  [_ {:keys [symbols]}]
+  (us/verify! ::us/set-of-str symbols)
+  (ptk/reify ::select-symbols
+    ;; ptk/UpdateEvent
+    ;; (update [_ state]
+    ;;   (update state :nav assoc :symbols symbols))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (ptk/event :nav {:symbols symbols})
+             (rx/of (ptk/event ::stg/initialize-scheduler))))))
 
 (defmethod ptk/resolve :toggle-symbol
   [_ {:keys [id] :as symbol}]

@@ -217,36 +217,55 @@ main .message .content .icon {
   font-weight: 200;
 }
 
+/* --- SECTION: SETTINGS --- */
 
-
-/* --- SECTION: SYMBOLS --- */
-
-.symbols-section {}
-.symbols-section .exchange-selection {
-  /* border-bottom: 1px dotted var(--color-gray-10); */
-  padding: 6px 12px;
+.settings-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
-.symbols-section .exchange-selection select {
-  border: 1px solid var(--color-gray-40);
+
+.strategies-section {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+.symbols-section {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 20px;
+}
+
+.strategies-section .strategy-title,
+.symbols-section .exchange-list {
+  padding: 6px 12px;
+  border: 0px;
+  margin-bottom: 10px;
+  border-bottom: 1px dotted var(--color-gray-40);
   border-radius: 2px;
   background-color: white;
   font-size: 18px;
   line-height: 26px;
   font-weight: 600;
   padding: 4px;
+  width: 140px;
+}
+.strategies-section .strategy-title[disabled] {
+  color: var(--color-gray-60);
+  opacity: 1;
 }
 
-.symbols-section .symbols-list {
+
+.strategies-section .strategy-list,
+.symbols-section .symbol-list {
+  /* margin: 10px 10px; */
   padding: 6px 12px;
-  margin-top: 5px;
-  max-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-}
-.symbols-section .symbols-list label {
-  cursor: pointer;
-  user-select: none;
+  width: 140px;
+  height: 65vh;
 }
 
 /* --- SECTION: STRATEGIES --- */
@@ -254,7 +273,7 @@ main .message .content .icon {
 .strategies-list {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: center;
   align-items: flex-start;
 }
 
