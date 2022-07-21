@@ -179,6 +179,7 @@ main .message .content .icon {
   border: 1px solid var(--color-primary-6);
   border-radius: 3px;
   padding: 2px 10px;
+  text-transform: uppercase;
 }
 
 .strategies .symbol-entry {
@@ -243,8 +244,8 @@ main .message .content .icon {
 }
 
 .strategies-section .strategy-title,
-.symbols-section .exchange-list {
-  padding: 6px 12px;
+.symbols-section .symbols-title {
+  user-select: none;
   border: 0px;
   margin-bottom: 10px;
   border-bottom: 1px dotted var(--color-gray-40);
@@ -253,20 +254,33 @@ main .message .content .icon {
   font-size: 18px;
   line-height: 26px;
   font-weight: 600;
-  padding: 4px;
+  width: 440px;
+}
+
+.strategies-section .strategy-title {
   width: 140px;
 }
-.strategies-section .strategy-title[disabled] {
+
+
+.strategies-section .strategy-title[disabled],
+.symbols-section .symbols-title[disabled] {
   color: var(--color-gray-60);
   opacity: 1;
 }
 
 
-.strategies-section .strategy-list,
-.symbols-section .symbol-list {
+.strategies-section .strategy-list {
   /* margin: 10px 10px; */
   padding: 6px 12px;
   width: 140px;
+  height: 65vh;
+}
+
+
+.symbols-section .symbol-list {
+  /* margin: 10px 10px; */
+  padding: 6px 12px;
+  width: 440px;
   height: 65vh;
 }
 
@@ -324,7 +338,7 @@ main .message .content .icon {
 .screener .screener-item {
   /* outline: 1px solid green; */
   margin: 5px;
-  padding: 5px;
+  padding: 5px 10px;
   border: 1px dotted var(--color-gray-5);
   display: flex;
   justify-content: space-between;
@@ -333,18 +347,21 @@ main .message .content .icon {
 
 .screener .screener-item:hover {
   border: 1px dotted var(--color-gray-10);
-  background-color: var(--color-gray-5);
+  background-color: var(--color-gray-1);
 }
 
 
 .screener .screener-item .symbol-name {
   display: flex;
-  width: 90px;
+  width: 120px;
   margin-right: 10px;
+  align-items: center;
+  font-weight: 400;
 }
 
+
 .screener .screener-item .timings {
-  width: 150px;
+  width: 320px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -353,12 +370,22 @@ main .message .content .icon {
 
 .screener .screener-item .timings > div {
   display: flex;
+  align-items: center;
+  text-transform: uppercase;
 }
 
-
-.screener .screener-item .direction {
+.screener .screener-item .timeframe {
   font-weight: 500;
   display: flex;
+  align-items: center;
+}
+
+.screener .screener-item .timeframe.negative {
+  color: var(--color-danger);
+}
+
+.screener .screener-item .timeframe.positive {
+  color: var(--color-success);
 }
 
 .screener .screener-item .spacer {
@@ -369,21 +396,46 @@ main .message .content .icon {
   font-weight: 200;
   margin-left: 3px;
   font-size: 14px;
+  align-items: center;
+  display: flex;
 }
+
+
 
 .screener .screener-item .signals {
   display: flex;
 }
 
-.screener .screener-item .signals > span {
+
+.screener .screener-item .signals .signal {
+  display: flex;
+}
+
+.screener .screener-item .signals .signal.inactive {
+  opacity: 0.4;
+}
+
+
+.screener .screener-item .signals .signal-name {
   font-size: 14xpx;
   padding: 2px 4px;
-  /* border-radius: 2px; */
-  /* background-color: var(--color-gray-5); */
-  /* border-bottom: 1px solid var(--color-gray-5); */
   text-transform: uppercase;
   display: flex;
   align-items: center;
+  font-weight: 400;
+}
+
+.screener .screener-item .signals .signal-direction {
+  display: flex;
+  align-items: center;
+  font-weight: 200;
+}
+
+.screener .screener-item .signals .signal-direction.positive {
+  color: var(--color-success);
+}
+.screener .screener-item .signals .signal-direction.negative {
+  color: var(--color-danger);
 }
 
 .screener .screener-item .signals > span:not(:last-child) {

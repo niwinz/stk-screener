@@ -21,10 +21,11 @@
 
 (mf/defc symbol-item
   [{:keys [symbol-id strategy-id created-at updated-at direction inactive]}]
-  (let [symbol-name   (get-in @st/state [:symbols symbol-id :name])
+  (let [symbols       (mf/deref st/symbols-ref)
+        symbol-name   (get-in symbols [symbol-id :name])
         toggle-status (mf/with-memo [symbol-id strategy-id]
                         (fn []
-                          (st/emit! #(update-in % [:signals strategy-id symbol-id :inactive] not))))]
+                          (st/emit! #(update-in % [:signals symbol-id strategy-id :inactive] not))))]
 
     [:div.symbol-entry
      {:key (str/concat symbol-id)
@@ -41,7 +42,7 @@
 (mf/defc strategy-item
   {::mf/wrap [mf/memo]}
   [{:keys [strategy-id] :as props}]
-  (let [symbols (mf/deref st/symbols-ref)
+  (let [symbols (mf/deref st/selected-symbols-ref)
         signals (mf/deref st/signals-ref)
         render  (mf/use-state 0)]
 
@@ -50,9 +51,10 @@
 
     [:*
      [:fieldset.strategy-item
-      [:legend (pr-str strategy-id)]
-      (for [symbol-id symbols]
-        (when-let [data (get-in signals [strategy-id symbol-id])]
+      [:legend (name strategy-id)]
+
+      (for [{symbol-id :id} (sort-by :name symbols)]
+        (when-let [data (get-in signals [symbol-id strategy-id])]
           [:& symbol-item {:key (str/concat symbol-id)
                            :symbol-id symbol-id
                            :strategy-id strategy-id

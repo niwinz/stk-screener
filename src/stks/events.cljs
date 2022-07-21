@@ -15,8 +15,10 @@
    [clojure.set :as set]
    [stks.events.strategies :as stg]
    [stks.events.types.nav :as-alias types.nav]
+   [stks.repo :as rp]
    [stks.util.logging :as log]
    [stks.util.spec :as us]
+   [stks.util.data :as d]
    [stks.util.storage :refer [storage]]
    [stks.util.webapi :as wa]))
 
@@ -30,7 +32,7 @@
   (ptk/reify :authenticate
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (ptk/event :nav {:section :dashboard})))
+      (rx/of (ptk/event :nav {:section :settings})))
 
     ptk/EffectEvent
     (effect [_ _ _]
@@ -64,16 +66,33 @@
                      (assoc :section :auth)
 
                      (nil? (:section params))
-                     (assoc :section :dashboard))]
+                     (assoc :section :settings))]
         (rx/of (ptk/event :nav params)
                (ptk/event :initialize))))))
+
+(def available-exchanges
+  "A static set of exchanges."
+  #{"oanda",
+    "fxcm",
+    "forex.com",
+    "icmtrader",
+    "fxpro",
+    "ic markets",
+    "pepperstone"})
 
 (defmethod ptk/resolve :initialize
   [_ params]
   (ptk/reify :initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (ptk/event ::stg/initialize-scheduler)))))
+      (rx/merge
+       (rx/of (ptk/event ::stg/initialize-scheduler))
+       (when-not (seq (:symbols state))
+         (->> (rx/from available-exchanges)
+              (rx/mapcat #(rp/req! :symbols {:exchange %}))
+              (rx/reduce #(merge %1 (d/index-by :id %2)) {})
+              (rx/map (fn [symbols]
+                        #(assoc % :symbols symbols)))))))))
 
 (s/def ::types.nav/section ::us/keyword)
 (s/def ::types.nav/token ::us/string)
@@ -124,52 +143,42 @@
                                  (reduce dissoc data remove-keys)))))
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (ptk/event :nav {:strategies strategies})
-             (ptk/event ::stg/initialize-scheduler)))))
+      (rx/of (ptk/event :nav {:strategies strategies})))))
 
-(defmethod ptk/resolve :toggle-strategy
-  [_ {:keys [id] :as strategy}]
-  (ptk/reify :activate-strategy
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [{:keys [strategies symbols] :or {strategies #{}}} (:nav state)]
-        (if (contains? strategies id)
-          (let [strategies (disj strategies id)]
-            (rx/of (ptk/event :nav {:strategies (if (empty? strategies) nil strategies)})
-                   (ptk/event ::stg/initialize-scheduler)
-                   #(update % :signals dissoc id)))
+;; (defmethod ptk/resolve :toggle-strategy
+;;   [_ {:keys [id] :as strategy}]
+;;   (ptk/reify :activate-strategy
+;;     ptk/WatchEvent
+;;     (watch [_ state stream]
+;;       (let [{:keys [strategies symbols] :or {strategies #{}}} (:nav state)]
+;;         (if (contains? strategies id)
+;;           (let [strategies (disj strategies id)]
+;;             (rx/of (ptk/event :nav {:strategies (if (empty? strategies) nil strategies)})
+;;                    #(update % :signals dissoc id)))
 
-
-          (let [strategies (conj strategies id)]
-            (rx/of (ptk/event :nav {:strategies strategies})
-                   (ptk/event ::stg/initialize-scheduler))))))))
+;;           (let [strategies (conj strategies id)]
+;;             (rx/of (ptk/event :nav {:strategies strategies}))))))))
 
 (defmethod ptk/resolve :select-symbols
   [_ {:keys [symbols]}]
   (us/verify! ::us/set-of-str symbols)
   (ptk/reify ::select-symbols
-    ;; ptk/UpdateEvent
-    ;; (update [_ state]
-    ;;   (update state :nav assoc :symbols symbols))
-
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/of (ptk/event :nav {:symbols symbols})
-             (rx/of (ptk/event ::stg/initialize-scheduler))))))
+             (ptk/event ::stg/initialize-scheduler)))))
 
-(defmethod ptk/resolve :toggle-symbol
-  [_ {:keys [id] :as symbol}]
-  (ptk/reify :toggle-symbol
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:symbols id] symbol))
+;; (defmethod ptk/resolve :toggle-symbol
+;;   [_ {:keys [id] :as symbol}]
+;;   (ptk/reify :toggle-symbol
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (assoc-in state [:symbols id] symbol))
 
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [symbols (get-in state [:nav :symbols] #{})]
-        (rx/concat
-         (if (contains? symbols id)
-           (rx/of (ptk/event :nav {:symbols (disj symbols id)}))
-           (rx/of (ptk/event :nav {:symbols (conj symbols id)})))
+;;     ptk/WatchEvent
+;;     (watch [_ state stream]
+;;       (let [symbols (get-in state [:nav :symbols] #{})]
+;;         (if (contains? symbols id)
+;;           (rx/of (ptk/event :nav {:symbols (disj symbols id)}))
+;;           (rx/of (ptk/event :nav {:symbols (conj symbols id)})))))))
 
-         (rx/of (ptk/event ::stg/initialize-scheduler)))))))

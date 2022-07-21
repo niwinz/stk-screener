@@ -38,13 +38,25 @@
   (l/derived :message state))
 
 (def symbols-ref
-  (l/derived :symbols nav-ref))
+  (l/derived :symbols state))
 
 (def strategies-ref
   (l/derived :strategies nav-ref))
 
 (def signals-ref
   (l/derived :signals state))
+
+(def ohlc-ref
+  (l/derived :ohlc state))
+
+(def selected-symbols-ref
+  (l/derived
+   (fn [state]
+     (let [selected (-> state :nav :symbols)
+           symbols  (:symbols state)]
+       (mapv #(get symbols %) selected)))
+   state
+   =))
 
 (defn emit!
   ([] nil)
@@ -68,3 +80,6 @@
      (emit! #(merge % state props)))))
 
 
+(defn ^:export dump-state
+  []
+  (clj->js @state))

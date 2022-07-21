@@ -19,30 +19,10 @@
    [stks.util.fontawesome :as fa]
    [stks.util.webapi :as wa]))
 
-(def exchanges
-  ["oanda",
-   "fxcm",
-   "forex.com",
-   "icmtrader",
-   "fxpro",
-   "pepperstoneuk",
-   "ic markets",
-   "fxpig",
-   "pepperstone"])
-
-
 (mf/defc symbols-section
   [props]
-  (let [exchange  (mf/use-state (first exchanges))
-        symbols   (mf/use-state nil)
-        selected  (mf/deref st/symbols-ref)
-
-        on-change-exchange
-        (mf/use-fn
-         (fn [event]
-           (let [value (-> (wa/get-target event)
-                           (wa/get-value))]
-             (reset! exchange value))))
+  (let [symbols   (mf/deref st/symbols-ref)
+        selected  (-> st/nav-ref mf/deref :symbols)
 
         on-symbol-change
         (mf/use-fn
@@ -52,33 +32,39 @@
                  vals (into #{} (map wa/get-value opts))]
              (st/emit! (ptk/event :select-symbols {:symbols vals})))))
 
-        deselect-symbols
+        on-symbol-toggle
         (mf/use-fn
          (fn [event]
            (wa/prevent-default! event)
            (wa/stop-propagation! event)
+           (let [node      (wa/get-target event)
+                 symbol-id (wa/get-value node)]
+             (st/emit! (ptk/event :toggle-symbol {:id symbol-id})))))
+
+        unselect-all
+        (mf/use-fn
+         (fn [event]
            (st/emit! (ptk/event :select-symbols {:symbols #{}}))))]
 
-    (mf/with-effect [@exchange]
-      (->> (rp/req! :symbols {:exchange @exchange})
-           (rx/subs (fn [data]
-                      (reset! symbols (d/index-by :id data))))))
-
     [:section.symbols-section
-     [:select.exchange-list {:value (or @exchange "")
-                             :on-change on-change-exchange}
-      (for [item exchanges]
-        [:option {:value item :key item } item])]
+     [:div.symbols-title
+      {:on-double-click unselect-all}
+      "Available symbols:"]
 
      [:select.symbol-list
       {:multiple true
-       :on-double-click deselect-symbols
        :value (or (some-> selected clj->js) #js [])
        :on-change on-symbol-change}
 
-      (for [{:keys [id] :as item} (->> (vals @symbols)
-                                       (sort-by :name))]
-        [:option {:value id :title (:desc item) :key id} (:name item)])]]))
+      (for [{:keys [id] :as item} (->> (vals symbols)
+                                       (sort-by (juxt :exchange :name)))]
+        [:option
+         {:key id
+          :value id
+          :title (:desc item)
+          ;; :on-click on-symbol-toggle
+          }
+         (:desc item)])]]))
 
 (mf/defc strategies-section
   []
@@ -92,7 +78,7 @@
                                       (map keyword)) (seq opts))]
              (st/emit! (ptk/event :select-strategies {:strategies vals})))))
 
-        deselect-fn
+        deselect-all
         (mf/use-fn
          (fn [event]
            (wa/prevent-default! event)
@@ -100,15 +86,11 @@
            (st/emit! (ptk/event :select-strategies {:strategies #{}}))))]
 
     [:section.strategies-section
-     [:select.strategy-title {:default-value "" :disabled true}
-      [:option {:value ""} "strategy"]]
-
+     [:div.strategy-title {:on-double-click deselect-all} "Strategies:"]
      [:select.strategy-list
       {:multiple true
-       :on-double-click deselect-fn
        :value (or (some-> selected clj->js) #js [])
        :on-change on-change}
-
       (for [{:keys [id] :as item} stg/available-strategies]
         (let [val (d/name id)]
           [:option {:value val :key val} val]))]]))

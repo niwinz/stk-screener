@@ -18,7 +18,7 @@
    [stks.util.storage :refer [storage cache]]
    [stks.util.time :as dt]))
 
-(log/set-level! :trace)
+(log/set-level! :info)
 
 ;; --- HELPERS
 
@@ -106,20 +106,21 @@
 (defmethod request :symbols
   [id params opts]
   (us/assert ::symbols-params params)
-  (with-cache {:key [id params] :max-age default-cache-duration}
+  (with-cache {:key [id params 3] :max-age default-cache-duration :disabled true}
     (->> (request-finnhub "forex/symbol" params)
          (rx/map (fn [symbols]
-                   (mapv (fn [item]
-                           (let [cid          (obj/get item "symbol")
-                                 [exchange _] (str/split cid #":")]
-                             {:id cid
-                              :name (obj/get item "displaySymbol")
-                              :desc (obj/get item "description")
-                              :exchange (str/lower exchange)}))
-                         (seq symbols)))))))
+                   (map (fn [item]
+                          (let [cid          (obj/get item "symbol")
+                                [exchange _] (str/split cid #":")]
+                            {:id cid
+                             :name (obj/get item "displaySymbol")
+                             :desc (obj/get item "description")
+                             :exchange (str/lower exchange)}))
+                        (seq symbols)))))))
 
-(defmethod request :symbol-data
-  [id {:keys [id timeframe] :as params} opts]
+
+(defmethod request :ohlc-data
+  [id {:keys [symbol-id timeframe] :as params} opts]
   (letfn [(extract-field [data field]
             (-> (obj/get data field) (seq) (reverse)))
           (on-data [data]
@@ -138,13 +139,13 @@
                                (take 5 macd2)
                                (take 5 close)
                                (take 5 ts))]
-              {:symbol-id   id
+              {:symbol-id  symbol-id
                :timeframe timeframe
                :entries entries}))
           ]
 
     (let [now     (dt/now)
-          params' {:symbol id
+          params' {:symbol symbol-id
                    :resolution (case timeframe
                                  :m5 "5"
                                  :m30 "30"
@@ -159,12 +160,16 @@
                            :h4  (-> now (dt/minus {:days 13}) (dt/format :epoch))
                            :d1  (-> now (dt/minus {:days 60}) (dt/format :epoch)))
                    :indicator "macd"}]
-      (with-cache {:key [id timeframe 5]
-                   :disable false
-                   :max-age (case timeframe
-                              :m30 (dt/duration {:minutes 15})
-                              :h4  (dt/duration {:hours 1})
-                              (dt/duration {:minutes 5}))}
+      (with-cache {:key [symbol-id timeframe 5]
+                   :disable true
+                   :max-age (dt/duration {:minutes 30})
+                   ;; :max-age (case timeframe
+                   ;;            :m30 (dt/duration {:minutes 3})
+                   ;;            :h4  (dt/duration {:hours 1})
+                   ;;            :m5  (dt/duration {:minutes 1})
+                   ;;            :h1  (dt/duration {:minutes 10})
+                   ;;            :d1  (dt/duration {:hours 1}))
+                   }
         (->> (request-finnhub "indicator" params')
              (rx/map on-data))))))
 
